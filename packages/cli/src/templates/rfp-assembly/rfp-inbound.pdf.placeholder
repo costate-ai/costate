@@ -1,0 +1,9 @@
+Drop the real inbound RFP PDF in this directory, renamed to `rfp-inbound.pdf`.
+
+Then ask your lead agent to run:
+
+    costate_upload rfp-inbound.pdf
+
+…which converts it to searchable Markdown in the workspace at `rfp-inbound.md`.
+
+This placeholder file can be deleted after the real RFP is uploaded.

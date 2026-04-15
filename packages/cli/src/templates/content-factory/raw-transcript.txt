@@ -1,0 +1,35 @@
+[SAMPLE TRANSCRIPT — replace with your real raw source]
+
+Recorded: 2026-03-12
+Participants: Host (H), Guest (G)
+Duration: 42:18
+
+---
+
+H: Welcome back to the show. Today we have [Guest Name] from [Company]. Thanks for being here.
+
+G: Thanks for having me. Great to be on.
+
+H: So last time we talked you were in the middle of a big launch. How did that go?
+
+G: Honestly, better than we expected. We had a specific number in mind for week one signups and we hit it in 30 hours. But the part we didn't plan for was the customer support load.
+
+H: Say more.
+
+G: So every new signup was a trial user poking around, asking questions. Our team is small — three people covering support. Monday morning after the launch weekend, there were 500 tickets in the queue.
+
+H: How did you handle it?
+
+G: We almost didn't. For about four hours we were just picking tickets at random and hoping two of us didn't answer the same one. Which happened, embarrassingly. At one point a customer got two completely different refund quotes from two different teammates.
+
+H: Ugh. What did you do?
+
+G: We built a really simple system with our agents — actually we used Costate for this — where each AI agent could atomically claim a ticket before responding. So two agents literally can't reply to the same one. Once we had that, we went from playing traffic cop to just watching the queue drain.
+
+H: That's a great example of where coordination infrastructure earns its keep.
+
+G: Yeah, it's the kind of thing where you don't think you need it until a Monday morning happens.
+
+---
+
+[CONTINUE: replace this with your real transcript content before drafting.]
