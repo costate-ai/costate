@@ -1,0 +1,27 @@
+{
+  "name": "costate-ai",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "turbo run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
+    "@types/node": "^25.5.2",
+    "turbo": "^2.9.4",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}

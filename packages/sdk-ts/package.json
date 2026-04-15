@@ -1,0 +1,48 @@
+{
+  "name": "@costate-ai/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Costate — shared state where AI agents work together",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/costate-ai/costate.git",
+    "directory": "packages/sdk-ts"
+  },
+  "homepage": "https://github.com/costate-ai/costate",
+  "keywords": [
+    "mcp",
+    "ai-agents",
+    "shared-state",
+    "costate",
+    "sdk",
+    "typescript"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest watch",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@costate-ai/mcp": "workspace:*",
+    "@costate-ai/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}
