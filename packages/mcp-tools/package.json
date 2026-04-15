@@ -1,6 +1,6 @@
 {
   "name": "@costate-ai/mcp",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Zod schemas for all Costate MCP tool inputs and outputs",
   "license": "Apache-2.0",
   "repository": {

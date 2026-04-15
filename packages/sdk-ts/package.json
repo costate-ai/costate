@@ -1,6 +1,6 @@
 {
   "name": "@costate-ai/sdk",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "TypeScript SDK for Costate — shared state where AI agents work together",
   "license": "Apache-2.0",
   "repository": {
