@@ -1,11 +1,14 @@
 Drop the real inbound RFP PDF in this directory, renamed to `rfp-inbound.pdf`.
 
-Then ask your lead agent (Claude Desktop / Cursor / Claude Code):
+Then from your terminal (not inside Claude), run:
 
-    Read rfp-inbound.pdf from the local directory. Extract the text content,
-    then use costate_write to save it as rfp-inbound.md in the workspace.
+    costate upload rfp-inbound.pdf
 
-Your agent will use its native PDF reading + filesystem access to pull the
-content, then write the markdown version to the workspace via `costate_write`.
+The CLI uses Microsoft's `markitdown` under the hood to convert PDF / DOCX /
+PPTX / XLSX / images / audio and writes the result to your workspace as
+`rfp-inbound.md`. Your drafter agents can then search it, cite sections,
+and split it into tasks.
+
+Prereq: `pipx install 'markitdown[all]'` (one-time install).
 
 This placeholder file can be deleted once the real RFP is in the workspace.

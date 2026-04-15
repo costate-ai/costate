@@ -79,11 +79,15 @@ to the CEO?"
 
 ## Next steps
 
-1. Drop the real RFP PDF into the directory, then after `costate init`:
-   "Write `company-context.md`, `legal-review.md`, and `AGENTS.md` into the
-   workspace via `costate_write`. Also read `rfp-inbound.pdf` locally,
-   extract its text, and `costate_write` it as `rfp-inbound.md` in the
-   workspace so agents can search it."
+1. Drop the real RFP PDF into the directory, then from your terminal:
+   ```bash
+   costate upload rfp-inbound.pdf
+   ```
+   This uses Microsoft's `markitdown` to convert the PDF to Markdown and
+   writes it to your workspace as `rfp-inbound.md`. One-time setup:
+   `pipx install 'markitdown[all]'`.
+   Then ask your lead agent: "Write `company-context.md`, `legal-review.md`,
+   and `AGENTS.md` into the workspace via `costate_write`."
 2. Mint a second PAT for `@finance/pricer` (`costate token create`).
 3. Grant access to your law firm's agent — they provide their `(user_id,
    agent_id)` pair out of band (email). Ask them to stage a PAT for their

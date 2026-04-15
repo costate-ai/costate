@@ -10,6 +10,7 @@ import {
 import { runWhoami } from "./commands/whoami.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runMcpProxy } from "./commands/mcp-proxy.js";
+import { runUpload } from "./commands/upload.js";
 import { DEFAULT_SERVICE_URL } from "./config.js";
 
 const program = new Command();
@@ -62,6 +63,21 @@ program
   .command("doctor")
   .description("Check system requirements and service connectivity")
   .action(runDoctor);
+
+program
+  .command("upload <path>")
+  .description(
+    "Convert a local file (PDF/DOCX/PPTX/XLSX/...) to Markdown via markitdown and write it to the workspace",
+  )
+  .option(
+    "-a, --as <uri>",
+    "Target URI in the workspace (defaults to <basename>.md)",
+  )
+  .option(
+    "-w, --workspace <id>",
+    "Workspace ID (defaults to config.workspaceId)",
+  )
+  .action(runUpload);
 
 program
   .command("mcp")
