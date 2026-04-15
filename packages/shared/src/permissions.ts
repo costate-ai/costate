@@ -1,0 +1,228 @@
+/**
+ * Fine-grained permission taxonomy for PATs and cross-tenant grants.
+ *
+ * Two layers:
+ *   1. PAT/Grant permissions — what the USER chose in the UI. Stored on the
+ *      PAT row and the GRANT row. GitHub-style dropdown matrix.
+ *   2. Scopes (see scopes.ts) — atomic server-side enforcement primitives
+ *      each MCP tool declares it needs. Permissions expand to scopes via
+ *      `permissionsToScopes()`.
+ *
+ * The user never sees scope strings directly. They pick permissions. The
+ * server computes the scope set and enforces per-call.
+ */
+
+import type { Scope } from "./scopes.js";
+
+// ─── Permission levels ────────────────────────────────────────
+
+/** Per-resource level. Not every resource supports every level. */
+export type PermissionLevel = "none" | "read" | "write" | "admin";
+
+// ─── Workspace-scoped resources ───────────────────────────────
+
+/**
+ * Permissions a PAT (or grant) carries FOR EACH workspace in its scope.
+ * Applied uniformly across all workspaces in `scope.workspaces` (GitHub
+ * semantics: one permission set for the whole selection).
+ */
+export interface WorkspacePermissions {
+  /** File CRUD. admin N/A. */
+  files: "none" | "read" | "write";
+
+  /** SQL SELECT / DML (INSERT/UPDATE/DELETE against existing tables). */
+  sql_data: "none" | "read" | "write";
+
+  /** SQL DDL (CREATE/ALTER/DROP TABLE). Either "none" or "admin". */
+  sql_schema: "none" | "admin";
+
+  /** Activity log: read = tail events, write = emit custom events (future). */
+  activity_log: "none" | "read" | "write";
+
+  /** File snapshots. admin N/A. */
+  snapshots: "none" | "read" | "write";
+
+  /** Task handoff: read = see tasks, write = create/claim/complete, admin = approve/reject HITL-gated tasks. */
+  task_handoff: "none" | "read" | "write" | "admin";
+
+  /** Access grants: read = list workspace members (needed for handoff routing), write = invite/revoke others. */
+  access_grants: "none" | "read" | "write";
+
+  /** Workspace metadata: read = see name/settings, write = rename, admin = delete. */
+  workspace_metadata: "none" | "read" | "write" | "admin";
+}
+
+// ─── Account-scoped permissions ──────────────────────────────
+
+/** Actions not tied to any specific workspace. */
+export interface AccountPermissions {
+  /** Mint new workspaces (was `can_create_workspaces`). */
+  create_workspaces: boolean;
+
+  /** Grant cross-tenant access (was `can_share_external_workspaces`). */
+  share_external: boolean;
+
+  /** This PAT can mint additional PATs. Security-sensitive — usually false. */
+  mint_pats: boolean;
+}
+
+// ─── Presets (GitHub-style radio buttons over the matrix) ────
+
+/**
+ * Common permission shapes users can pick with a single click before
+ * expanding the "Custom" matrix. Preserved across PAT creation + grant UI.
+ */
+export const WORKSPACE_PRESETS = {
+  /** Read-only observation: view files, query SQL, see tasks and logs. */
+  read: {
+    files: "read",
+    sql_data: "read",
+    sql_schema: "none",
+    activity_log: "read",
+    snapshots: "read",
+    task_handoff: "read",
+    access_grants: "read",
+    workspace_metadata: "read",
+  } as WorkspacePermissions,
+
+  /** Collaborator: read + write files/data/tasks/snapshots. No schema, no delete, no sharing. */
+  write: {
+    files: "write",
+    sql_data: "write",
+    sql_schema: "none",
+    activity_log: "write",
+    snapshots: "write",
+    task_handoff: "write",
+    access_grants: "read",
+    workspace_metadata: "write",
+  } as WorkspacePermissions,
+
+  /** Workspace admin: everything — schema DDL, grant invites, delete, approve HITL tasks. */
+  admin: {
+    files: "write",
+    sql_data: "write",
+    sql_schema: "admin",
+    activity_log: "write",
+    snapshots: "write",
+    task_handoff: "admin",
+    access_grants: "write",
+    workspace_metadata: "admin",
+  } as WorkspacePermissions,
+} as const;
+
+export type WorkspacePreset = keyof typeof WORKSPACE_PRESETS;
+
+/** Empty-access baseline: everything "none". Use as a starting point for "Custom". */
+export const WORKSPACE_NO_ACCESS: WorkspacePermissions = {
+  files: "none",
+  sql_data: "none",
+  sql_schema: "none",
+  activity_log: "none",
+  snapshots: "none",
+  task_handoff: "none",
+  access_grants: "none",
+  workspace_metadata: "none",
+};
+
+/** Account-level defaults for a fresh free-tier user. */
+export const ACCOUNT_FREE_TIER: AccountPermissions = {
+  create_workspaces: true,
+  share_external: true,
+  mint_pats: false,
+};
+
+// ─── Permissions → Scopes conversion ─────────────────────────
+
+/**
+ * Expand a WorkspacePermissions object into the atomic scope[] array the
+ * server uses for per-tool gating (see TOOL_SCOPES in scopes.ts).
+ *
+ * Callers only use this server-side — never on the wire.
+ */
+export function permissionsToScopes(p: WorkspacePermissions): Scope[] {
+  const scopes: Scope[] = [];
+
+  if (p.files === "read" || p.files === "write") scopes.push("files:read");
+  if (p.files === "write") scopes.push("files:write");
+
+  if (p.sql_data === "read" || p.sql_data === "write") scopes.push("sql:read");
+  if (p.sql_data === "write") scopes.push("sql:write");
+  if (p.sql_schema === "admin") {
+    // DDL implies read+write data
+    if (!scopes.includes("sql:read")) scopes.push("sql:read");
+    if (!scopes.includes("sql:write")) scopes.push("sql:write");
+    scopes.push("sql:ddl");
+  }
+
+  if (p.activity_log === "read" && !scopes.includes("files:read")) {
+    scopes.push("files:read");
+  }
+
+  if (p.snapshots === "read" || p.snapshots === "write") {
+    if (!scopes.includes("files:read")) scopes.push("files:read");
+  }
+  if (p.snapshots === "write" && !scopes.includes("files:write")) {
+    scopes.push("files:write");
+  }
+
+  if (p.task_handoff !== "none" && !scopes.includes("files:read")) {
+    scopes.push("files:read");
+  }
+  if (
+    (p.task_handoff === "write" || p.task_handoff === "admin") &&
+    !scopes.includes("files:write")
+  ) {
+    scopes.push("files:write");
+  }
+
+  if (p.access_grants === "write") scopes.push("workspace:invite");
+
+  if (p.workspace_metadata === "admin") scopes.push("workspace:manage");
+  if (p.workspace_metadata === "read" && !scopes.includes("files:read")) {
+    scopes.push("files:read");
+  }
+
+  return scopes;
+}
+
+/**
+ * Validate requested account_permissions against the user's CAP ceiling.
+ * REJECTS on overreach — never silently downgrades. A silent clamp leads
+ * to mysterious 403s down the line when the client assumed it had
+ * capabilities it actually doesn't. Fail loud, fail closed.
+ *
+ * Returns the set of keys that exceed the ceiling. Empty = request valid.
+ * Callers throw a 403 with the exceeded keys in the error body so the user
+ * sees exactly what was asked for vs what's allowed.
+ */
+export function accountPermissionsExceedingCeiling(
+  requested: AccountPermissions,
+  ceiling: AccountPermissions,
+): Array<keyof AccountPermissions> {
+  const over: Array<keyof AccountPermissions> = [];
+  if (requested.create_workspaces && !ceiling.create_workspaces)
+    over.push("create_workspaces");
+  if (requested.share_external && !ceiling.share_external)
+    over.push("share_external");
+  if (requested.mint_pats && !ceiling.mint_pats) over.push("mint_pats");
+  return over;
+}
+
+/**
+ * Compare two permission levels. Returns true if `granted` is at least as
+ * permissive as `required`. Used for server-side gate checks.
+ */
+export function hasWorkspacePermission(
+  granted: WorkspacePermissions,
+  resource: keyof WorkspacePermissions,
+  min: PermissionLevel,
+): boolean {
+  const order: Record<PermissionLevel, number> = {
+    none: 0,
+    read: 1,
+    write: 2,
+    admin: 3,
+  };
+  const g = granted[resource] as PermissionLevel;
+  return order[g] >= order[min];
+}

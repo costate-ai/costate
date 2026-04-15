@@ -8,4 +8,5 @@
  */
 
 export * from "./pat-schemas.js";
+export * from "./permissions.js";
 export * from "./scopes.js";
