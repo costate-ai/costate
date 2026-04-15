@@ -1,40 +1,45 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import type { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type {
-  ReadOutput,
-  WriteOutput,
-  EditOutput,
-  DeleteOutput,
-  SearchGlobOutput,
-  SearchGrepOutput,
-  SearchFTSOutput,
-  GitDiffOutput,
-  GitLogOutput,
-  BashOutput,
-  WatchOutput,
-  StatusOutput,
-  AgentsOutput,
-  SqlOutput,
-  UploadOutput,
-} from '@costate-ai/mcp';
-import type { CostateClientConfig } from './types.js';
-import { createTransport } from './transport.js';
-import { parseMcpError } from './errors.js';
+  ReadInput,
+  WriteInput,
+  EditInput,
+  DeleteInput,
+  ListInput,
+  SearchInput,
+  SqlInput,
+  LogInput,
+  WatchInput,
+  StatusInput,
+  SnapshotInput,
+  SnapshotsInput,
+  ListWorkspacesInput,
+  WorkspaceInput,
+  AccessInput,
+  HandoffInput,
+  ToolOutput,
+} from "@costate-ai/mcp";
+import type { CostateClientConfig } from "./types.js";
+import { createTransport } from "./transport.js";
+import { parseMcpError } from "./errors.js";
 
 /**
  * Costate TypeScript SDK client.
  *
- * Wraps the MCP Streamable HTTP protocol with typed methods for all 16 tools.
+ * Wraps the MCP Streamable HTTP protocol with typed methods for all 16 Costate
+ * tools. v0.1 returns outputs as `unknown` (cast at call site); typed outputs
+ * land when docs/SPEC.md stabilizes.
  *
  * @example
  * ```ts
- * const client = new CostateClient({ url: 'http://localhost:3000' });
+ * const client = new CostateClient({
+ *   url: "https://api.costate.ai",
+ *   token: "cst_your_pat_here",
+ *   workspaceId: "ws_xxx",
+ * });
  * await client.connect();
- *
- * await client.write('config/settings', JSON.stringify({ theme: 'dark' }));
- * const result = await client.read('config/settings');
- * console.log(result.content);
- *
+ * await client.write({ uri: "config/settings", content: "{\"theme\":\"dark\"}" });
+ * const result = await client.read({ uri: "config/settings" });
  * await client.close();
  * ```
  */
@@ -47,20 +52,20 @@ export class CostateClient {
     this.config = config;
   }
 
-  /** Connect to the Costate server. Must be called before any tool methods. */
+  /** Connect to Costate. Must be called before any tool methods. */
   async connect(): Promise<void> {
     const transport = createTransport(this.config);
     this.transport = transport;
-    this.client = new Client({ name: 'costate-sdk', version: '0.1.0' });
+    this.client = new Client({ name: "costate-sdk", version: "0.1.0" });
     await this.client.connect(transport);
   }
 
-  /** The MCP session ID assigned by the server after connect(). */
+  /** MCP session ID assigned by the server after connect(). */
   get sessionId(): string | undefined {
     return this.transport?.sessionId;
   }
 
-  /** Close the connection and clean up the session. */
+  /** Close the connection. */
   async close(): Promise<void> {
     if (this.client) {
       await this.client.close();
@@ -69,131 +74,165 @@ export class CostateClient {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Resource operations
-  // ---------------------------------------------------------------------------
+  // ─── Discovery ─────────────────────────────────────────
 
-  /** Read a file's content. Pass `options.at` with a commit hash to read a historical version. */
-  async read(file: string, options?: { at?: string }): Promise<ReadOutput> {
-    return this.callTool<ReadOutput>('costate_read', { file, ...options });
+  /** List workspaces this agent can access (member + cross-tenant grants). */
+  async listWorkspaces(args: ListWorkspacesInput = {}): Promise<ToolOutput> {
+    return this.callTool("costate_list_workspaces", args);
   }
 
-  /** Write (create or overwrite) a file. Max 10MB. Pass options.version for optimistic concurrency. */
-  async write(file: string, content: string, options?: { version?: string }): Promise<WriteOutput> {
-    return this.callTool<WriteOutput>('costate_write', { file, content, ...options });
+  // ─── File operations ───────────────────────────────────
+
+  /** Read a file. */
+  async read(args: Omit<ReadInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_read", args);
   }
 
-  /** Edit a file by replacing an exact string match. old_string must be unique. Pass options.version for optimistic concurrency. */
-  async edit(file: string, oldString: string, newString: string, options?: { version?: string }): Promise<EditOutput> {
-    return this.callTool<EditOutput>('costate_edit', { file, old_string: oldString, new_string: newString, ...options });
+  /** Write (create or overwrite) a file. `expectedVersion` enables OCC. */
+  async write(args: Omit<WriteInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_write", args);
   }
 
-  /** Delete a file. Pass options.version for optimistic concurrency. */
-  async delete(file: string, options?: { version?: string }): Promise<DeleteOutput> {
-    return this.callTool<DeleteOutput>('costate_delete', { file, ...options });
+  /** Edit a file by replacing an exact string. */
+  async edit(args: Omit<EditInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_edit", args);
+  }
+
+  /** Delete a file. */
+  async delete(args: Omit<DeleteInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_delete", args);
   }
 
   /** List files matching a glob pattern. */
-  async glob(pattern: string): Promise<SearchGlobOutput> {
-    return this.callTool<SearchGlobOutput>('costate_search', { glob: pattern });
+  async list(args: Omit<ListInput, "workspace"> = {}): Promise<ToolOutput> {
+    return this.callTool("costate_list", args);
   }
 
-  /** Search file contents with regex. */
-  async grep(pattern: string, options?: { glob?: string; maxResults?: number }): Promise<SearchGrepOutput> {
-    return this.callTool<SearchGrepOutput>('costate_search', { content: pattern, ...options });
+  /** Search file contents with a regex pattern (optionally scoped by glob). */
+  async search(args: Omit<SearchInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_search", args);
   }
 
-  /** Full-text search with relevance ranking. Supports OR, "exact phrase", -exclude. */
-  async search(query: string, options?: { glob?: string; maxResults?: number }): Promise<SearchFTSOutput> {
-    return this.callTool<SearchFTSOutput>('costate_search', { query, ...options });
+  // ─── SQL ───────────────────────────────────────────────
+
+  /** Execute SQL against the workspace's SQLite database. */
+  async sql(args: Omit<SqlInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_sql", args);
   }
 
-  /** Upload a binary document and convert to searchable markdown. Requires markitdown CLI. */
-  async upload(file: string, data: string, options?: { format?: string }): Promise<UploadOutput> {
-    return this.callTool<UploadOutput>('costate_upload', { file, data, ...options });
+  // ─── History / monitoring ──────────────────────────────
+
+  /** Get recent activity events for the workspace. */
+  async log(args: Omit<LogInput, "workspace"> = {}): Promise<ToolOutput> {
+    return this.callTool("costate_log", args);
   }
 
-  // ---------------------------------------------------------------------------
-  // Query operations
-  // ---------------------------------------------------------------------------
-
-  /** Get diff between commits or for a file. */
-  async diff(options?: { from?: string; to?: string; file?: string }): Promise<GitDiffOutput> {
-    return this.callTool<GitDiffOutput>('costate_git', { operation: 'diff', ...options });
+  /** Poll for new activity events since a cursor. */
+  async watch(args: Omit<WatchInput, "workspace"> = {}): Promise<ToolOutput> {
+    return this.callTool("costate_watch", args);
   }
 
-  /** Get commit history. Default limit 50, max 200. */
-  async log(options?: { limit?: number; file?: string }): Promise<GitLogOutput> {
-    return this.callTool<GitLogOutput>('costate_git', { operation: 'log', ...options });
+  /** Get workspace metadata, file count, agent list, SQLite table schemas. */
+  async status(args: Omit<StatusInput, "workspace"> = {}): Promise<ToolOutput> {
+    return this.callTool("costate_status", args);
   }
 
-  // ---------------------------------------------------------------------------
-  // Compute
-  // ---------------------------------------------------------------------------
+  // ─── Snapshots ─────────────────────────────────────────
 
-  /** Execute a shell command in the sandbox. Default timeout 30s, max 120s. */
-  async bash(command: string, options?: { timeout?: number }): Promise<BashOutput> {
-    return this.callTool<BashOutput>('costate_bash', { command, ...options });
+  /** Create a snapshot of a file. */
+  async snapshot(args: Omit<SnapshotInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_snapshot", args);
   }
 
-  // ---------------------------------------------------------------------------
-  // Coordination
-  // ---------------------------------------------------------------------------
-
-  /** Poll for changes since a cursor. Max 100 events per poll. */
-  async watch(cursor?: string, options?: { limit?: number }): Promise<WatchOutput> {
-    return this.callTool<WatchOutput>('costate_watch', { cursor, ...options });
+  /** List snapshots for a file. */
+  async snapshots(
+    args: Omit<SnapshotsInput, "workspace">,
+  ): Promise<ToolOutput> {
+    return this.callTool("costate_snapshots", args);
   }
 
-  // ---------------------------------------------------------------------------
-  // Status
-  // ---------------------------------------------------------------------------
+  // ─── Workspace lifecycle ───────────────────────────────
 
-  /** Get workspace status (file count, database tables, commits, locks, active agents). */
-  async status(): Promise<StatusOutput> {
-    return this.callTool<StatusOutput>('costate_status', {});
+  /**
+   * Manage workspaces (agent-authored): create | delete | update | list.
+   * `workspace_id` here identifies the TARGET workspace for the operation,
+   * independent of the PAT's scoped workspace. Not auto-injected.
+   */
+  async workspace(args: WorkspaceInput): Promise<ToolOutput> {
+    return this.callToolNoInject("costate_workspace", args);
   }
 
-  /** List active agents with lock count and recent activity. */
-  async agents(): Promise<AgentsOutput> {
-    return this.callTool<AgentsOutput>('costate_agents', {});
+  // ─── Cross-tenant access ───────────────────────────────
+
+  /**
+   * Grant / revoke / revoke_self cross-tenant workspace access.
+   * `workspace_id` is the target, not auto-injected.
+   */
+  async access(args: AccessInput): Promise<ToolOutput> {
+    return this.callToolNoInject("costate_access", args);
   }
 
-  /** Execute a SQL query against the workspace database. */
-  async sql(query: string): Promise<SqlOutput> {
-    return this.callTool<SqlOutput>('costate_sql', { query });
+  // ─── Task handoff (A2A-compatible) ─────────────────────
+
+  /**
+   * Coordinate tasks between agents. Actions: create (default), claim,
+   * complete, fail, cancel, approve, reject, get, list.
+   */
+  async handoff(args: HandoffInput): Promise<ToolOutput> {
+    return this.callToolNoInject("costate_handoff", args);
   }
 
-  // ---------------------------------------------------------------------------
-  // Internal
-  // ---------------------------------------------------------------------------
+  // ─── Internal ──────────────────────────────────────────
 
-  private async callTool<T>(name: string, args: Record<string, unknown>): Promise<T> {
+  /**
+   * Inject the SDK's configured workspaceId into the `workspace` field
+   * when not already set. Used for tools that are scoped to a single
+   * workspace via per-call resolution.
+   */
+  private async callTool(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<ToolOutput> {
+    const clean = stripUndefined(args);
+    if (this.config.workspaceId && clean.workspace === undefined) {
+      clean.workspace = this.config.workspaceId;
+    }
+    return this.rawCall(name, clean);
+  }
+
+  /**
+   * For tools whose workspace_id field is a TARGET, not a scope — no
+   * auto-injection. Caller must be explicit.
+   */
+  private async callToolNoInject(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<ToolOutput> {
+    return this.rawCall(name, stripUndefined(args));
+  }
+
+  private async rawCall(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<ToolOutput> {
     if (!this.client) {
-      throw new Error('CostateClient not connected. Call connect() first.');
+      throw new Error("CostateClient not connected. Call connect() first.");
     }
-
-    // Strip undefined values from args
-    const cleanArgs: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(args)) {
-      if (value !== undefined) {
-        cleanArgs[key] = value;
-      }
-    }
-
-    // Inject workspace_id from config when not explicitly provided
-    if (this.config.workspaceId && !cleanArgs['workspace_id']) {
-      cleanArgs['workspace_id'] = this.config.workspaceId;
-    }
-
-    const result = await this.client.callTool({ name, arguments: cleanArgs });
-
+    const result = await this.client.callTool({ name, arguments: args });
     const content = result.content as Array<{ type: string; text: string }>;
-
     if (result.isError) {
       throw parseMcpError(content);
     }
-
-    return JSON.parse(content[0].text) as T;
+    return JSON.parse(content[0].text) as ToolOutput;
   }
+}
+
+function stripUndefined(
+  args: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(args)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
 }

@@ -19,9 +19,6 @@
     "build": "tsc",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
-  "dependencies": {
-    "@costate-ai/shared": "workspace:*"
-  },
   "devDependencies": {
     "@types/node": "^25.5.2",
     "typescript": "^6.0.2"

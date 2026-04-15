@@ -1,11 +1,18 @@
 /**
- * Configuration for connecting to a Costate server.
+ * Configuration for connecting to the Costate coordination service.
  */
 export interface CostateClientConfig {
-  /** Server URL (e.g. "http://localhost:3000") */
+  /** Service URL, e.g. "https://api.costate.ai". */
   url: string;
-  /** API key for authentication (cst_... token). Identifies the agent — agentId is resolved from the token server-side. */
-  apiKey?: string;
-  /** Workspace ID to connect to. Appended as ?workspace= to the MCP endpoint URL. */
+  /**
+   * Bearer token for authentication. Either a Costate PAT (`cst_...`) or
+   * a Cognito JWT. The server identifies the agent from the token.
+   */
+  token?: string;
+  /**
+   * Default workspace ID. Auto-injected as `workspace` into scoped tool calls
+   * (read/write/sql/etc.). Not injected into management tools
+   * (workspace/access/handoff) whose `workspace_id` is an operation target.
+   */
   workspaceId?: string;
 }

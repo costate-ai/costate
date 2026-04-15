@@ -1,29 +1,37 @@
+/**
+ * @costate-ai/sdk — TypeScript client for the Costate coordination service.
+ */
+
 // Main client
-export { CostateClient } from './client.js';
-export type { CostateClientConfig } from './types.js';
+export { CostateClient } from "./client.js";
+export type { CostateClientConfig } from "./types.js";
 
 // Error parsing (for advanced use)
-export { parseMcpError } from './errors.js';
+export { parseMcpError } from "./errors.js";
 
-// Re-export types from @costate-ai/mcp for convenience
+// Re-export input types for all 16 tools (call-site typing)
 export type {
-  ReadOutput,
-  WriteOutput,
-  EditOutput,
-  DeleteOutput,
-  SearchGlobOutput,
-  SearchGrepOutput,
-  GitDiffOutput,
-  GitLogOutput,
-  BashOutput,
-  WatchOutput,
-  StatusOutput,
-  AgentsOutput,
-  SqlOutput,
-} from '@costate-ai/mcp';
+  ReadInput,
+  WriteInput,
+  EditInput,
+  DeleteInput,
+  ListInput,
+  SearchInput,
+  SqlInput,
+  LogInput,
+  WatchInput,
+  StatusInput,
+  SnapshotInput,
+  SnapshotsInput,
+  ListWorkspacesInput,
+  WorkspaceInput,
+  AccessInput,
+  HandoffInput,
+  ToolOutput,
+  ToolDefinition,
+} from "@costate-ai/mcp";
 
-// Re-export error classes from @costate-ai/shared/errors for catch handling
-// (sub-path import avoids pulling in Node.js-only store code for browser consumers)
+// Re-export error classes for catch handling (subpath avoids Node-only code)
 export {
   CostateError,
   ResourceNotFoundError,
@@ -40,4 +48,4 @@ export {
   TimeoutError,
   ThrottleError,
   ResourceLimitError,
-} from '@costate-ai/shared/errors';
+} from "@costate-ai/shared/errors";

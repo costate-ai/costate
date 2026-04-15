@@ -1,71 +1,46 @@
-import chalk from 'chalk';
-import { CostateClient } from '@costate-ai/sdk';
-import { loadConfig } from '../config.js';
-import { createTable, colorAgent, timeAgo, spinner, error as printError } from '../output.js';
+import chalk from "chalk";
+import { CostateClient } from "@costate-ai/sdk";
+import { loadConfig, DEFAULT_SERVICE_URL } from "../config.js";
+import { spinner, error as printError } from "../output.js";
 
+/**
+ * Show status for the default workspace (or a passed --workspace), via
+ * costate_status. v0.1: raw JSON dump. Pretty table formatting lands when
+ * the output schema is locked in @costate-ai/mcp.
+ */
 export async function runStatus(): Promise<void> {
   const config = await loadConfig();
-  const url = config.serverUrl || 'http://localhost:3000';
+  const url = config.url || DEFAULT_SERVICE_URL;
 
-  const spin = spinner('Connecting to server...');
+  if (!config.token) {
+    printError("Not logged in. Run `costate login` first.");
+    process.exit(1);
+  }
+
+  const spin = spinner("Connecting...");
   spin.start();
 
-  const client = new CostateClient({ url, apiKey: config.apiKey });
+  const client = new CostateClient({
+    url,
+    token: config.token,
+    workspaceId: config.workspaceId,
+  });
 
   try {
     await client.connect();
-    spin.text = 'Fetching workspace status...';
-
-    const [status, agentsResult] = await Promise.all([
-      client.status(),
-      client.agents(),
-    ]);
-
+    spin.text = "Fetching workspace status...";
+    const status = await client.status();
     spin.stop();
 
-    // Workspace overview
     console.log();
-    console.log(chalk.bold('Workspace Status'));
+    console.log(chalk.bold("Workspace Status"));
     console.log();
-
-    const statusTable = createTable({ head: ['Metric', 'Value'] });
-    statusTable.push(
-      ['Workspace ID', chalk.cyan(status.id)],
-      ['Files', String(status.fileCount)],
-      ['Total Size', formatBytes(status.totalSize)],
-      ['Commits', String(status.commitCount)],
-      ['Last Activity', status.lastActivity ? timeAgo(status.lastActivity) : chalk.dim('none')],
-    );
-    console.log(statusTable.toString());
-
-    // Agents
-    if (agentsResult.agents.length > 0) {
-      console.log();
-      console.log(chalk.bold('Active Agents'));
-      console.log();
-
-      const agentsTable = createTable({ head: ['Agent', 'Last Seen', 'Recent Actions'] });
-      for (const agent of agentsResult.agents) {
-        agentsTable.push([
-          colorAgent(agent.agentId),
-          timeAgo(agent.lastSeen),
-          String(agent.recentActions),
-        ]);
-      }
-      console.log(agentsTable.toString());
-    }
-
+    console.log(JSON.stringify(status, null, 2));
     console.log();
     await client.close();
   } catch (err) {
     spin.stop();
-    printError(`Failed to connect: ${(err as Error).message}`);
+    printError(`Failed: ${(err as Error).message}`);
     process.exit(1);
   }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

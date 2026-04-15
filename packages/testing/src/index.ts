@@ -1,5 +1,8 @@
-export { createTestWorkspace, cleanupTestWorkspace, cleanupAllTestWorkspaces } from './fixtures/workspace.js';
-export { sampleResources } from './fixtures/resources.js';
-export { getLastCommit, getCommitCount, assertCommitExists } from './helpers/git.js';
-export { createTestStore } from './helpers/store.js';
-export type { TestMcpClient } from './helpers/mcp.js';
+/**
+ * @costate-ai/testing — test fixtures and helpers.
+ *
+ * Placeholder for the greenfield rewrite. Utilities land as real tests
+ * need them (MCP fake server, PAT fixtures, handoff state-machine helpers).
+ */
+
+export const TESTING_VERSION = "0.1.0";

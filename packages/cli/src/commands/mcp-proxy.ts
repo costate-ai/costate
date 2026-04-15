@@ -1,44 +1,52 @@
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { DEFAULT_SERVICE_URL, loadConfig } from "../config.js";
 
-export async function runMcpProxy(options: { url?: string; token?: string }): Promise<void> {
-  const serverUrl = options.url || process.env['COSTATE_URL'] || 'http://localhost:3000';
-  const token = options.token || process.env['COSTATE_API_KEY'];
+/**
+ * stdio ↔ HTTP bridge so MCP clients (Claude Desktop, Cursor, Claude Code)
+ * can talk to the Costate service over their stdio transport. Options take
+ * precedence over env vars, which take precedence over persisted config.
+ */
+export async function runMcpProxy(options: {
+  url?: string;
+  token?: string;
+  workspace?: string;
+}): Promise<void> {
+  const config = await loadConfig();
+  const serverUrl =
+    options.url || process.env["COSTATE_URL"] || config.url || DEFAULT_SERVICE_URL;
+  const token = options.token || process.env["COSTATE_TOKEN"] || config.token;
+  const workspaceId =
+    options.workspace || process.env["COSTATE_WORKSPACE"] || config.workspaceId;
 
   if (!token) {
     process.stderr.write(
-      'Error: Token required. Create one with:\n' +
-      '  curl -X POST http://localhost:3000/auth/tokens \\\n' +
-      '    -H "Content-Type: application/json" \\\n' +
-      '    -H "x-costate-user-id: local-user" \\\n' +
-      '    -d \'{"agentId": "claude-desktop"}\'\n\n' +
-      'Then pass it via --token or COSTATE_API_KEY env var.\n',
+      "Error: Token required. Run `costate login` to authenticate, or pass --token / COSTATE_TOKEN.\n",
     );
     process.exit(1);
   }
 
   // If the URL already ends with /mcp, use as-is. Otherwise append /mcp.
-  const mcpUrl = serverUrl.endsWith('/mcp')
+  const mcpUrl = serverUrl.endsWith("/mcp")
     ? new URL(serverUrl)
-    : new URL('/mcp', serverUrl);
+    : new URL("/mcp", serverUrl);
 
   const stdio = new StdioServerTransport();
   const http = new StreamableHTTPClientTransport(mcpUrl, {
     requestInit: {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
+        ...(workspaceId ? { "x-costate-workspace": workspaceId } : {}),
       },
     },
   });
 
-  // Wire: stdio → HTTP
   stdio.onmessage = (msg) => {
     http.send(msg).catch((err) => {
       process.stderr.write(`HTTP send error: ${err}\n`);
     });
   };
 
-  // Wire: HTTP → stdio
   http.onmessage = (msg) => {
     stdio.send(msg).catch((err) => {
       process.stderr.write(`stdio send error: ${err}\n`);
@@ -63,12 +71,11 @@ export async function runMcpProxy(options: { url?: string; token?: string }): Pr
     process.exit(0);
   };
 
-  // Handle process signals
-  process.on('SIGINT', () => {
+  process.on("SIGINT", () => {
     http.close().catch(() => {});
     stdio.close().catch(() => {});
   });
-  process.on('SIGTERM', () => {
+  process.on("SIGTERM", () => {
     http.close().catch(() => {});
     stdio.close().catch(() => {});
   });
@@ -76,5 +83,5 @@ export async function runMcpProxy(options: { url?: string; token?: string }): Pr
   await http.start();
   await stdio.start();
 
-  process.stderr.write(`Costate MCP proxy started → ${serverUrl}\n`);
+  process.stderr.write(`Costate MCP bridge started → ${serverUrl}\n`);
 }
