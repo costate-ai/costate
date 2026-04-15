@@ -80,9 +80,10 @@ to the CEO?"
 ## Next steps
 
 1. Drop the real RFP PDF into the directory, then after `costate init`:
-   "Upload `company-context.md`, `legal-review.md`, and `AGENTS.md` to the
-   workspace. Also `costate_upload rfp-inbound.pdf` to convert it to
-   searchable markdown in the workspace."
+   "Write `company-context.md`, `legal-review.md`, and `AGENTS.md` into the
+   workspace via `costate_write`. Also read `rfp-inbound.pdf` locally,
+   extract its text, and `costate_write` it as `rfp-inbound.md` in the
+   workspace so agents can search it."
 2. Mint a second PAT for `@finance/pricer` (`costate token create`).
 3. Grant access to your law firm's agent — they provide their `(user_id,
    agent_id)` pair out of band (email). Ask them to stage a PAT for their

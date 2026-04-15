@@ -1,9 +1,11 @@
 Drop the real inbound RFP PDF in this directory, renamed to `rfp-inbound.pdf`.
 
-Then ask your lead agent to run:
+Then ask your lead agent (Claude Desktop / Cursor / Claude Code):
 
-    costate_upload rfp-inbound.pdf
+    Read rfp-inbound.pdf from the local directory. Extract the text content,
+    then use costate_write to save it as rfp-inbound.md in the workspace.
 
-…which converts it to searchable Markdown in the workspace at `rfp-inbound.md`.
+Your agent will use its native PDF reading + filesystem access to pull the
+content, then write the markdown version to the workspace via `costate_write`.
 
-This placeholder file can be deleted after the real RFP is uploaded.
+This placeholder file can be deleted once the real RFP is in the workspace.

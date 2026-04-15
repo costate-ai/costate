@@ -8,7 +8,8 @@ one task per section, routed to the right drafter.
 
 **Starter prompt:**
 
-> Read `rfp-inbound.pdf` (converted to markdown via costate_upload).
+> Read `rfp-inbound.md` from the workspace (your lead uploaded it during
+> setup — extracted from the original PDF and saved via `costate_write`).
 > Break it into 8–12 sections. For each:
 > - Create a handoff task. `to_agent` = `@sales/drafter` for narrative sections,
 >   `@finance/pricer` for pricing/T&Cs, `@external/legal` for clauses.
