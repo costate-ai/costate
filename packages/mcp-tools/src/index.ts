@@ -150,6 +150,23 @@ export type WorkspaceInput = z.infer<typeof WorkspaceInput>;
 
 // ─── Cross-tenant access (Google-Docs-style sharing) ───────
 
+/**
+ * Fine-grained grant permissions. Same shape as the PAT permission matrix
+ * in @costate-ai/shared — reused here so the share UI and PAT UI use one
+ * component. Either `role` (legacy shorthand) or `permissions` (v0.1.4+)
+ * can be provided on grant; `permissions` wins when both present.
+ */
+export const GrantPermissionsInput = z.object({
+  files: z.enum(["none", "read", "write"]),
+  sql_data: z.enum(["none", "read", "write"]),
+  sql_schema: z.enum(["none", "admin"]),
+  activity_log: z.enum(["none", "read", "write"]),
+  snapshots: z.enum(["none", "read", "write"]),
+  task_handoff: z.enum(["none", "read", "write", "admin"]),
+  access_grants: z.enum(["none", "read", "write"]),
+  workspace_metadata: z.enum(["none", "read", "write", "admin"]),
+});
+
 export const AccessInput = z.object({
   operation: z
     .enum(["grant", "revoke", "revoke_self"])
@@ -164,10 +181,9 @@ export const AccessInput = z.object({
     .describe(
       "Required for grant. (cognito_sub, agent_ulid) obtained out-of-band.",
     ),
-  role: z
-    .enum(["read", "write"])
-    .optional()
-    .describe("Required for grant. write = files+sql write; read = read-only."),
+  permissions: GrantPermissionsInput.optional().describe(
+    "Fine-grained permission matrix — required for grant. Use WORKSPACE_PRESETS.{read|write|admin} from @costate-ai/shared for common shapes.",
+  ),
   grantee: z
     .object({
       user_id: z.string().min(1),
