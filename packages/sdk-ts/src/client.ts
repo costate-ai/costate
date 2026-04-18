@@ -5,6 +5,7 @@ import type {
   WriteInput,
   EditInput,
   DeleteInput,
+  MkdirInput,
   ListInput,
   SearchInput,
   SqlInput,
@@ -98,9 +99,14 @@ export class CostateClient {
     return this.callTool("costate_edit", args);
   }
 
-  /** Delete a file. */
+  /** Delete a file or folder. Folder URIs must end with `/` for recursive delete. */
   async delete(args: Omit<DeleteInput, "workspace">): Promise<ToolOutput> {
     return this.callTool("costate_delete", args);
+  }
+
+  /** Create an empty folder. URI must end with `/`. */
+  async mkdir(args: Omit<MkdirInput, "workspace">): Promise<ToolOutput> {
+    return this.callTool("costate_mkdir", args);
   }
 
   /** List files matching a glob pattern. */

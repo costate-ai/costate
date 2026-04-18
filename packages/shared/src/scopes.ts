@@ -96,6 +96,7 @@ export const TOOL_SCOPES: Record<string, Scope> = {
   costate_write: "files:write",
   costate_edit: "files:write",
   costate_delete: "files:write",
+  costate_mkdir: "files:write",
   costate_list: "files:read",
   costate_search: "files:read",
   costate_sql: "sql:read", // handler further checks sql:write/sql:ddl based on SQL classification

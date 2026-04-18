@@ -10,6 +10,33 @@ import { z } from "zod";
 
 const WORKSPACE_ID_RE = /^ws_[a-f0-9]{16}$/;
 
+// ─── URI normalization ─────────────────────────────────────
+
+/**
+ * Normalize a file URI so costate behaves as a markdown-native coordination
+ * layer without silently mangling explicit extensions.
+ *
+ * Rules:
+ *   - Trailing `/` → folder intent, preserved as-is.
+ *   - Basename already contains any dot → preserved (respects `foo.json`,
+ *     `.gitignore`, `v1.2.3`, `foo.bar.baz`).
+ *   - Otherwise → append `.md`.
+ *
+ * Applied bidirectionally to every tool schema that takes a URI (read, write,
+ * edit, delete, snapshot) so an agent writing `notes` and later reading `notes`
+ * transparently hits the canonical `notes.md`. Known tradeoff: `Dockerfile`,
+ * `Makefile`, `Jenkinsfile` become `Dockerfile.md` etc. — revisit if this
+ * surfaces as a real bug.
+ */
+export function normalizeUri(uri: string): string {
+  if (uri.endsWith("/")) return uri;
+  const basename = uri.split("/").pop() ?? "";
+  if (basename.includes(".")) return uri;
+  return `${uri}.md`;
+}
+
+const uriField = z.string().transform(normalizeUri);
+
 // ─── Shared parameters ─────────────────────────────────────
 
 /**
@@ -30,13 +57,13 @@ export type ListWorkspacesInput = z.infer<typeof ListWorkspacesInput>;
 
 export const ReadInput = z.object({
   workspace: wsParam,
-  uri: z.string().describe("File path relative to workspace root"),
+  uri: uriField.describe("File path relative to workspace root"),
 });
 export type ReadInput = z.infer<typeof ReadInput>;
 
 export const WriteInput = z.object({
   workspace: wsParam,
-  uri: z.string(),
+  uri: uriField,
   content: z.string(),
   expectedVersion: z.string().optional(),
 });
@@ -44,7 +71,7 @@ export type WriteInput = z.infer<typeof WriteInput>;
 
 export const EditInput = z.object({
   workspace: wsParam,
-  uri: z.string(),
+  uri: uriField,
   old_string: z.string(),
   new_string: z.string(),
   expectedVersion: z.string().optional(),
@@ -53,10 +80,25 @@ export type EditInput = z.infer<typeof EditInput>;
 
 export const DeleteInput = z.object({
   workspace: wsParam,
-  uri: z.string(),
+  uri: uriField,
   expectedVersion: z.string().optional(),
 });
 export type DeleteInput = z.infer<typeof DeleteInput>;
+
+/**
+ * Create an empty folder in the workspace. URI must end with `/` to make
+ * folder intent explicit and avoid accidental collision with file writes.
+ */
+export const MkdirInput = z.object({
+  workspace: wsParam,
+  uri: z
+    .string()
+    .min(1)
+    .refine((u) => u.endsWith("/"), {
+      message: "Folder URI must end with '/' (e.g., 'notes/')",
+    }),
+});
+export type MkdirInput = z.infer<typeof MkdirInput>;
 
 export const ListInput = z.object({
   workspace: wsParam,
@@ -109,14 +151,14 @@ export type StatusInput = z.infer<typeof StatusInput>;
 
 export const SnapshotInput = z.object({
   workspace: wsParam,
-  uri: z.string(),
+  uri: uriField,
   message: z.string().optional(),
 });
 export type SnapshotInput = z.infer<typeof SnapshotInput>;
 
 export const SnapshotsInput = z.object({
   workspace: wsParam,
-  uri: z.string(),
+  uri: uriField,
 });
 export type SnapshotsInput = z.infer<typeof SnapshotsInput>;
 
@@ -320,8 +362,21 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     name: "costate_list",
     title: "List files",
-    description: "List all files matching an optional glob pattern.",
+    description:
+      "List all files matching an optional glob pattern. Response includes " +
+      "`files` (file URIs only, for backward compat) and `entries` " +
+      "(`{uri, isDir}[]` — files AND folders).",
     inputSchema: ListInput,
+  },
+  {
+    name: "costate_mkdir",
+    title: "Create a folder",
+    description:
+      "Create an empty folder in the workspace. URI must end with '/'. " +
+      "Files can also be created in nested paths directly (parent folders " +
+      "are created automatically on write); use mkdir only to create an " +
+      "empty folder explicitly.",
+    inputSchema: MkdirInput,
   },
   {
     name: "costate_search",

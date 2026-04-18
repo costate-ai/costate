@@ -11,6 +11,7 @@ import { runWhoami } from "./commands/whoami.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runMcpProxy } from "./commands/mcp-proxy.js";
 import { runUpload } from "./commands/upload.js";
+import { runMkdir } from "./commands/mkdir.js";
 import { DEFAULT_SERVICE_URL } from "./config.js";
 
 const program = new Command();
@@ -78,6 +79,15 @@ program
     "Workspace ID (defaults to config.workspaceId)",
   )
   .action(runUpload);
+
+program
+  .command("mkdir <path>")
+  .description("Create an empty folder in the workspace (trailing / optional)")
+  .option(
+    "-w, --workspace <id>",
+    "Workspace ID (defaults to config.workspaceId)",
+  )
+  .action(runMkdir);
 
 program
   .command("mcp")
