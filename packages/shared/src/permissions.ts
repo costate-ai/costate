@@ -61,9 +61,6 @@ export interface AccountPermissions {
 
   /** Grant cross-tenant access (was `can_share_external_workspaces`). */
   share_external: boolean;
-
-  /** This PAT can mint additional PATs. Security-sensitive — usually false. */
-  mint_pats: boolean;
 }
 
 // ─── Presets (GitHub-style radio buttons over the matrix) ────
@@ -128,7 +125,6 @@ export const WORKSPACE_NO_ACCESS: WorkspacePermissions = {
 export const ACCOUNT_FREE_TIER: AccountPermissions = {
   create_workspaces: true,
   share_external: true,
-  mint_pats: false,
 };
 
 // ─── Permissions → Scopes conversion ─────────────────────────
@@ -204,7 +200,6 @@ export function accountPermissionsExceedingCeiling(
     over.push("create_workspaces");
   if (requested.share_external && !ceiling.share_external)
     over.push("share_external");
-  if (requested.mint_pats && !ceiling.mint_pats) over.push("mint_pats");
   return over;
 }
 

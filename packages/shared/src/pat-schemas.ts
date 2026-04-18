@@ -62,7 +62,6 @@ export const WorkspacePermissionsInput = z.object({
 export const AccountPermissionsInput = z.object({
   create_workspaces: z.boolean(),
   share_external: z.boolean(),
-  mint_pats: z.boolean(),
 });
 
 export const CreatePatInput = z.object({
