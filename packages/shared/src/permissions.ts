@@ -133,50 +133,70 @@ export const ACCOUNT_FREE_TIER: AccountPermissions = {
  * Expand a WorkspacePermissions object into the atomic scope[] array the
  * server uses for per-tool gating (see TOOL_SCOPES in scopes.ts).
  *
+ * Strict 1:1 mapping — each permission key produces ONLY scopes for its own
+ * resource family. No silent cross-grants. If a grant needs to read files,
+ * the admin grants `files: read` explicitly. Previously `task_handoff: write`
+ * silently added `files:write`, which let handoff recipients overwrite
+ * arbitrary files in workspaces shared with `files: read`. That escalation
+ * is removed. (Exception: `sql_schema: admin` still implies sql:read+write
+ * because DDL only makes sense with data access; dropped tables can't be
+ * SELECTed.)
+ *
  * Callers only use this server-side — never on the wire.
  */
 export function permissionsToScopes(p: WorkspacePermissions): Scope[] {
   const scopes: Scope[] = [];
 
+  // Files
   if (p.files === "read" || p.files === "write") scopes.push("files:read");
   if (p.files === "write") scopes.push("files:write");
 
+  // SQL — DDL implies read+write data (still a defensible coupling).
   if (p.sql_data === "read" || p.sql_data === "write") scopes.push("sql:read");
   if (p.sql_data === "write") scopes.push("sql:write");
   if (p.sql_schema === "admin") {
-    // DDL implies read+write data
     if (!scopes.includes("sql:read")) scopes.push("sql:read");
     if (!scopes.includes("sql:write")) scopes.push("sql:write");
     scopes.push("sql:ddl");
   }
 
-  if (p.activity_log === "read" && !scopes.includes("files:read")) {
-    scopes.push("files:read");
-  }
+  // Activity log
+  if (p.activity_log === "read" || p.activity_log === "write")
+    scopes.push("activity:read");
+  if (p.activity_log === "write") scopes.push("activity:write");
 
-  if (p.snapshots === "read" || p.snapshots === "write") {
-    if (!scopes.includes("files:read")) scopes.push("files:read");
-  }
-  if (p.snapshots === "write" && !scopes.includes("files:write")) {
-    scopes.push("files:write");
-  }
+  // Snapshots
+  if (p.snapshots === "read" || p.snapshots === "write")
+    scopes.push("snapshots:read");
+  if (p.snapshots === "write") scopes.push("snapshots:write");
 
-  if (p.task_handoff !== "none" && !scopes.includes("files:read")) {
-    scopes.push("files:read");
-  }
+  // Tasks (handoff)
   if (
-    (p.task_handoff === "write" || p.task_handoff === "admin") &&
-    !scopes.includes("files:write")
-  ) {
-    scopes.push("files:write");
+    p.task_handoff === "read" ||
+    p.task_handoff === "write" ||
+    p.task_handoff === "admin"
+  )
+    scopes.push("tasks:read");
+  if (p.task_handoff === "write" || p.task_handoff === "admin")
+    scopes.push("tasks:write");
+  if (p.task_handoff === "admin") scopes.push("tasks:admin");
+
+  // Workspace metadata
+  if (
+    p.workspace_metadata === "read" ||
+    p.workspace_metadata === "write" ||
+    p.workspace_metadata === "admin"
+  )
+    scopes.push("metadata:read");
+  if (p.workspace_metadata === "write" || p.workspace_metadata === "admin")
+    scopes.push("metadata:write");
+  if (p.workspace_metadata === "admin") {
+    scopes.push("metadata:admin");
+    scopes.push("workspace:manage"); // legacy gate for delete-workspace; remove once callers migrate
   }
 
+  // Access grants (invite/revoke other users)
   if (p.access_grants === "write") scopes.push("workspace:invite");
-
-  if (p.workspace_metadata === "admin") scopes.push("workspace:manage");
-  if (p.workspace_metadata === "read" && !scopes.includes("files:read")) {
-    scopes.push("files:read");
-  }
 
   return scopes;
 }

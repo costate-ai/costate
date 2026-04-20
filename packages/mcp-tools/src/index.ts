@@ -216,23 +216,29 @@ export const AccessInput = z.object({
   workspace_id: z.string().regex(WORKSPACE_ID_RE).describe("Target workspace"),
   invitee: z
     .object({
-      user_id: z.string().min(1),
-      agent_id: z.string().min(1),
+      email: z.string().email(),
     })
     .optional()
     .describe(
-      "Required for grant. (cognito_sub, agent_ulid) obtained out-of-band.",
+      "Required for grant. Identify the recipient by email (the same address they sign in with). Grants are user-level; which of the recipient's agents can use the grant is controlled by their PAT whitelists.",
     ),
-  permissions: GrantPermissionsInput.optional().describe(
-    "Fine-grained permission matrix — required for grant. Use WORKSPACE_PRESETS.{read|write|admin} from @costate-ai/shared for common shapes.",
-  ),
+  preset: z
+    .enum(["read", "write", "admin"])
+    .optional()
+    .describe(
+      "Permission preset for grant. Defaults to 'read' if omitted. Common case — use this. 'write' gives full collaboration (read+write files, run SQL, participate in handoffs). 'admin' gives everything including workspace rename/delete and cross-tenant re-sharing. The preset expands to the full 8-field WorkspacePermissions matrix (see WORKSPACE_PRESETS in @costate-ai/shared); pair with `overrides` to tighten or loosen specific fields.",
+    ),
+  overrides: GrantPermissionsInput.partial()
+    .optional()
+    .describe(
+      "Sparse per-field overrides that layer on top of `preset`. Example: `preset: 'read', overrides: { task_handoff: 'write' }` gives a reader who can also work on handoffs. Only specify fields you want to change relative to the preset — don't restate the whole matrix. Use this rarely; presets cover 95% of sharing patterns.",
+    ),
   grantee: z
     .object({
-      user_id: z.string().min(1),
-      agent_id: z.string().min(1),
+      email: z.string().email(),
     })
     .optional()
-    .describe("Required for revoke. Identifies whose access to remove."),
+    .describe("Required for revoke. Identify whose access to remove by email."),
 });
 export type AccessInput = z.infer<typeof AccessInput>;
 
@@ -259,10 +265,12 @@ export const HandoffInput = z.object({
     .max(8192)
     .optional()
     .describe("Task description (required for create, max 8KB)"),
-  to_agent: z
-    .string()
+  to_user: z
+    .object({ email: z.string().email() })
     .optional()
-    .describe("Target agent ID, or '*' for any claimant (default: '*')"),
+    .describe(
+      "REQUIRED for action=create. Recipient human, by email (same as costate_access.invitee.email). The server runs the recipient's routing rules to pick one of their agents; unmatched handoffs become pending-assignment for the recipient to pick in Control Tower. (Marked optional only because non-create actions don't use it; create returns 400 without it.)",
+    ),
   payload_ref: z
     .string()
     .regex(/^costate:\/\//)
