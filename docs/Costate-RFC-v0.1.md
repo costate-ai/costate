@@ -1,8 +1,14 @@
 # Costate
 
-**Version:** 0.1.0-draft
+**Version:** 0.1.1-draft
 **Status:** Working Draft — All sections (1–8) drafted normatively; companion RFCs forthcoming for §7 capability specs
-**Date:** 2026-05-01
+**Date:** 2026-05-04
+
+**Changes since 0.1.0-draft:**
+- §3.7 (new) **Agent Discovery**: hosts MUST expose a workspace-scoped
+  agent directory so a sender's client can pick `to_agent` for a task.
+  Hosts SHOULD NOT implement server-side automated routing rules —
+  routing decisions belong to the requester's client.
 **Editors:** TBD
 
 ## Abstract
@@ -840,6 +846,68 @@ status):
 
 Hosts MAY emit additional vendor-specific codes prefixed with `X_<VENDOR>_`.
 
+### 3.7 Agent Discovery
+
+A Costate host MUST expose a workspace-scoped **agent directory** so that a
+sender's client can pick `to_agent` (§3.3.1) when creating a task. This
+replaces any need for hosts to implement server-side automated routing
+rules: routing decisions belong to the requester's client, not to a
+host-side rule engine.
+
+Hosts SHOULD NOT implement automated server-side routing of tasks based on
+sender identity, keyword matching, or similar heuristics. Costate is
+infrastructure; routing is application logic.
+
+**Endpoint:**
+
+```
+GET /v1/workspaces/{workspace_id}/agents
+```
+
+**Authorization:** the caller MUST be an authenticated workspace member
+(§1.7) or grantee (§1.7) of the workspace. Non-members MUST receive
+`403 SCOPE_DENIED` (or `404 NOT_FOUND` per §8.5 cross-tenant info-leakage
+prevention).
+
+**Response (200):**
+
+```json
+{
+  "agents": [
+    {
+      "agent_uri": "costate://example.com/agents/agent_abc123",
+      "agent_id": "agent_abc123",
+      "agent_name": "code-reviewer",
+      "description": "Reviews PRs for security issues",
+      "principal_uri": "costate://example.com/principals/user_alice",
+      "principal_email": "alice@example.com"
+    }
+  ]
+}
+```
+
+Each entry in `agents` is an agent owned by some workspace member or
+grantee. The `principal_email` field MAY be omitted when the host's
+privacy policy disallows it.
+
+**Privacy contract:** every workspace member already implicitly knows
+the workspace's other members (e.g., when reading the activity log
+which carries `actor` URIs per §1.8). The agent directory exposes a
+strict superset of that information. v0.1.2 may introduce a per-agent
+opt-out (`hidden_in_directory: true`) for sensitive workspaces.
+
+**Filtering:** hosts MAY filter the response — for example, omitting
+soft-deleted agents, agents whose principal is currently suspended,
+or agents the caller's grant explicitly bars from coordinating with.
+Filtering rules are implementation-defined; hosts SHOULD document
+any non-obvious filtering they apply.
+
+**Capability advertisement:** hosts that implement this endpoint MUST
+advertise the capability `costate.agent-discovery` at §7.1. Hosts that
+do not implement it MUST return `501 NOT_IMPLEMENTED` for the endpoint,
+and tasks MUST then be created with `to_agent` either pre-known to the
+sender or set to `null` / `"*"`.
+
 ---
 
 ## 4. Authentication and Trust Negotiation
@@ -1480,7 +1548,7 @@ Response 200:
 
 ```json
 {
-  "version": "0.1.0-draft",
+  "version": "0.1.1-draft",
   "capabilities": [
     "costate.core",
     "costate.subscription",
@@ -1783,6 +1851,6 @@ Comments on this draft should be filed at the protocol working repository
 
 ---
 
-**End of Costate v0.1.0-draft. Sections 1–8 drafted normatively.
+**End of Costate v0.1.1-draft. Sections 1–8 drafted normatively.
 Companion RFCs forthcoming for §7 capability specifications
 (SQL, Schema Registry, Snapshots, Streaming).**
