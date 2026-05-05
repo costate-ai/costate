@@ -39,11 +39,11 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.4.1"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.5"
   }
 }

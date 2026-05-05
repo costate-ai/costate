@@ -10,7 +10,7 @@ agents picking work off the queue in parallel, each applying their own policy
 playbook, without ever accidentally replying to the same ticket twice.
 
 Costate is the shared state AND the coordination layer. Agents read tickets from
-the SQLite table, atomically claim one via `costate_handoff`, respond, and mark
+the SQLite table, atomically claim one via `costate_task`, respond, and mark
 it done. The claim uses compare-and-swap — if two agents reach for the same
 ticket, exactly one wins.
 
@@ -18,16 +18,16 @@ ticket, exactly one wins.
 
 | Handle | Role | Reads | Writes |
 |:-------|:-----|:------|:-------|
-| `@cs/triage` | Classifier. Reads the inbox, assigns a category, creates a handoff task targeting the right specialist. | `tickets.sqlite` | `tickets.sqlite`, `costate_handoff` |
-| `@cs/billing` | Billing specialist. Applies `policies/refunds.md`. | `policies/refunds.md`, `tickets.sqlite` | `tickets.sqlite`, `costate_handoff complete` |
-| `@cs/tech` | Tech specialist. Applies `policies/tech.md`. | `policies/tech.md`, `tickets.sqlite` | `tickets.sqlite`, `costate_handoff complete` |
+| `@cs/triage` | Classifier. Reads the inbox, assigns a category, creates a handoff task targeting the right specialist. | `tickets.sqlite` | `tickets.sqlite`, `costate_task` |
+| `@cs/billing` | Billing specialist. Applies `policies/refunds.md`. | `policies/refunds.md`, `tickets.sqlite` | `tickets.sqlite`, `costate_task complete` |
+| `@cs/tech` | Tech specialist. Applies `policies/tech.md`. | `policies/tech.md`, `tickets.sqlite` | `tickets.sqlite`, `costate_task complete` |
 
 ## The coordination moment
 
 Two agents both see ticket `T-4823` in the queue. Both call:
 
 ```json
-{ "tool": "costate_handoff",
+{ "tool": "costate_task",
   "params": { "action": "claim", "task_id": "task_abc123" } }
 ```
 

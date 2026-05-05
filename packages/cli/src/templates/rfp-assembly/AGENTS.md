@@ -3,7 +3,7 @@
 ## @sales/lead (you, probably)
 
 **Role:** project manager. Reads the inbound RFP, creates handoff tasks for
-each section. You operate through a `costate_handoff create` loop —
+each section. You operate through a `costate_task create` loop —
 one task per section, routed to the right drafter.
 
 **Starter prompt:**
@@ -22,7 +22,7 @@ one task per section, routed to the right drafter.
 **Role:** narrative writer.
 
 **Loop:**
-1. `costate_handoff list --to_agent <me> --status submitted`
+1. `costate_task list --to_agent <me> --status submitted`
 2. For each: `claim` → read `payload_ref` → write to `drafts/<section>.md`
    referencing `company-context.md`.
 3. If the section touches a clause (indemnity, liability, IP), add an entry

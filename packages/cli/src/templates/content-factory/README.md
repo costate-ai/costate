@@ -29,7 +29,7 @@ ships until the SEO agent explicitly approves.
 finishes a draft, they create a handoff task targeting `@marketing/seo`:
 
 ```json
-{ "tool": "costate_handoff",
+{ "tool": "costate_task",
   "params": {
     "action": "create",
     "task": "SEO review: drafts/q1-launch-recap.md",
@@ -43,7 +43,7 @@ The distro agent polls for tasks *chained off* completed SEO tasks — it never
 claims a draft that hasn't been through SEO. When SEO finishes:
 
 ```json
-{ "tool": "costate_handoff",
+{ "tool": "costate_task",
   "params": {
     "action": "complete",
     "task_id": "task_seo_xxx",

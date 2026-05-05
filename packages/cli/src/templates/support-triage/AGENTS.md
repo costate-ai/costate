@@ -17,7 +17,7 @@ first to learn its role.
 2. Update `tickets.category` and `tickets.status = 'triaged'`.
 3. Create a handoff task targeting `@cs/billing` or `@cs/tech`:
    ```json
-   { "tool": "costate_handoff",
+   { "tool": "costate_task",
      "params": {
        "action": "create",
        "task": "Ticket T-4823 — please respond. Category: billing.",
@@ -38,13 +38,13 @@ a human with `needs_approval=true`.
 
 **On connect:**
 1. Read `policies/refunds.md`. That is your playbook.
-2. `costate_handoff list --to_agent <your-ulid> --status submitted`.
+2. `costate_task list --to_agent <your-ulid> --status submitted`.
 
 **For each task:**
-1. `costate_handoff claim` — atomic. If you lose the race, move on.
+1. `costate_task claim` — atomic. If you lose the race, move on.
 2. Fetch the ticket from `tickets.sqlite`.
 3. Apply `policies/refunds.md`.
-4. If auto-approved: write a response, update the row, `costate_handoff complete`.
+4. If auto-approved: write a response, update the row, `costate_task complete`.
 5. If escalate: create a `needs_approval=true` sub-task for a human.
 
 **Never** respond to a ticket whose `assigned_agent` is not you.
@@ -55,7 +55,7 @@ a human with `needs_approval=true`.
 
 **On connect:**
 1. Read `policies/tech.md`.
-2. `costate_handoff list --to_agent <your-ulid> --status submitted`.
+2. `costate_task list --to_agent <your-ulid> --status submitted`.
 
 Same claim/answer/complete loop as @cs/billing but with the tech playbook.
 

@@ -185,7 +185,7 @@ export class CostateClient {
    * complete, fail, cancel, approve, reject, get, list.
    */
   async handoff(args: HandoffInput): Promise<ToolOutput> {
-    return this.callToolNoInject("costate_handoff", args);
+    return this.callToolNoInject("costate_task", args);
   }
 
   // ─── Internal ──────────────────────────────────────────

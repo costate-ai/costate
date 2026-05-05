@@ -1,17 +1,56 @@
-# Costate Protocol Specification
+# Costate Cloud — Reference Implementation Notes
 
-**Version:** 0.1
-**Status:** **Descriptive, not Normative.** This document describes what the
-reference implementation at `api.costate.ai` currently accepts and emits.
-Breaking changes are expected until v1.0. Do not build long-lived integrations
-against specific shapes below without version-pinning.
+> ⚠️ **This document is not the protocol specification.**
+>
+> The normative protocol is the [**Costate**](./Costate-RFC-v0.1.md).
+> Where this document and the Costate spec disagree, the RFC governs. This file
+> describes what the **Costate Cloud reference implementation** currently
+> accepts and emits, including non-normative extensions and historical
+> shapes retained for backward compatibility.
 
-**Scope:** The wire-level contract a client must satisfy to call Costate tools,
-interpret responses, subscribe to events, and coordinate with other agents.
+**Version:** 0.1 (Costate Cloud impl notes; tracks Costate v0.1.0-draft)
+**Status:** **Descriptive, not Normative.** Reference-implementation
+behavior. Breaking changes are expected until both this document and the
+Costate spec reach v1.0.
+
+**Scope:** What clients calling `api.costate.ai` (the reference Costate
+Cloud deployment) can rely on today, including:
+- Implementation-specific URI shapes (older `costate://ws_<id>/...` form
+  vs. the Costate-canonical `costate://<host>/<workspace_id>/...` form).
+- Implementation-specific token prefixes (`cst_pat_` legacy alias for
+  `cst_aat_`).
+- Subscription delivery via SSE (a `host-local` transport per Costate §6.3.2).
+- Cloud-specific extensions not in Costate §§1–3 (e.g., SQL operations,
+  schema registry).
 
 **Out of scope:** Storage layout, cloud-specific infrastructure (DynamoDB,
-Fargate, S3), authentication identity-provider plumbing. Implementation details
-live in the reference server's private repository.
+Fargate, S3), authentication identity-provider plumbing. Implementation
+details live in the reference server's private repository.
+
+**Migration path:** As Costate spec sections reach normative status, this
+document SHOULD shrink — content normatively defined in the RFC moves
+out of this file and is replaced by a pointer to the relevant RFC
+section. Long-term, this file documents only the Cloud-specific delta
+on top of Costate.
+
+**Naming alignment with Costate spec.** The Costate Cloud reference
+implementation uses several names that differ from the Costate-canonical
+forms. Both names refer to the same underlying primitive; the table
+below maps Cloud→Costate for readers cross-referencing this document and
+the RFC. Code and config in this repository continue to use the
+left-hand column for backward compatibility during the deprecation
+window:
+
+| This document (Cloud impl)             | Costate spec canonical (§)              |
+|----------------------------------------|------------------------------------|
+| Personal Access Token (PAT)            | Agent Access Token (AAT) (§1.8)    |
+| Token prefix `cst_pat_`                | Token prefix `cst_aat_` (§1.8)     |
+| MCP tool `costate_handoff`             | MCP tool `costate_task` (Appx A)   |
+| "Handoff" (state machine, payload ref) | "Task" (§1.4, §3.3)                |
+| URI form `costate://<ws_id>/...`       | URI form `costate://<host>/<ws_id>/...` (§2.1) |
+
+The Cloud reference implementation accepts both forms during the
+transition; new clients SHOULD prefer the Costate-canonical forms.
 
 ---
 

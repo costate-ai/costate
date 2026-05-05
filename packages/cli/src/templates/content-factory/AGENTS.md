@@ -22,7 +22,7 @@ interviews) into long-form blog drafts.
    stage='in-seo'` atomically via `costate_sql`.
 6. Create a handoff task:
    ```json
-   { "tool": "costate_handoff",
+   { "tool": "costate_task",
      "params": {
        "action": "create",
        "task": "SEO review: <slug>",
@@ -39,10 +39,10 @@ Nothing ships past them without approval.
 
 **On connect:**
 1. Read `brand-voice.md` and `keyword-targets.md`.
-2. `costate_handoff list --to_agent <me> --status submitted`.
+2. `costate_task list --to_agent <me> --status submitted`.
 
 **Loop per task:**
-1. `costate_handoff claim`.
+1. `costate_task claim`.
 2. Read the draft from `payload_ref`.
 3. Verify against `keyword-targets.md`:
    - Primary keyword present in title + H1 + first paragraph?
@@ -52,15 +52,15 @@ Nothing ships past them without approval.
 4. If yes:
    - Edit the draft in place to add meta tags + fix anchor text.
    - `UPDATE pieces SET seo_approved=1, stage='in-distro'`.
-   - `costate_handoff complete` with `result_ref = draft_uri`.
+   - `costate_task complete` with `result_ref = draft_uri`.
    - Create a follow-up task: `to_agent = <distro-agent-ulid>`,
      `task = "Distribute: <slug>"`.
 5. If no (first or second revision):
    - Write specific fix requests into `seo_notes` column for this piece.
-   - `costate_handoff fail` with `reason = "needs revisions — see pieces.seo_notes"`.
+   - `costate_task fail` with `reason = "needs revisions — see pieces.seo_notes"`.
    - A new handoff goes back to @marketing/writer.
 6. If a THIRD round of rejections on the same piece:
-   - Escalate: `costate_handoff create` with `needs_approval=true`,
+   - Escalate: `costate_task create` with `needs_approval=true`,
      `task = "Human review required — 3 rounds of SEO pushback on <slug>."`
    - Block the piece (`stage='blocked'`) until human decides.
 
@@ -70,7 +70,7 @@ Nothing ships past them without approval.
 
 **On connect:**
 1. Read `brand-voice.md` — channel rules matter here.
-2. `costate_handoff list --to_agent <me> --status submitted`.
+2. `costate_task list --to_agent <me> --status submitted`.
 
 **Loop per task:**
 1. `claim`.
@@ -82,7 +82,7 @@ Nothing ships past them without approval.
    - `output/<slug>/yt-short-script.md` — 30–60 sec
 4. `INSERT INTO assets` rows for each produced file.
 5. `UPDATE pieces SET stage='shipped', shipped_at=now()`.
-6. `costate_handoff complete`.
+6. `costate_task complete`.
 
 ## Human operator
 

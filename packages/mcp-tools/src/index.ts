@@ -445,7 +445,7 @@ export const toolDefinitions: ToolDefinition[] = [
     inputSchema: AccessInput,
   },
   {
-    name: "costate_handoff",
+    name: "costate_task",
     title: "Coordinate tasks between agents",
     description:
       "Create, claim, complete, or manage task handoffs between agents.",

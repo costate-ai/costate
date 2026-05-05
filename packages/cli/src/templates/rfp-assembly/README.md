@@ -53,7 +53,7 @@ your agents see it via SSE. Revoke access when the deal closes:
 with `needs_approval=true`:
 
 ```json
-{ "tool": "costate_handoff",
+{ "tool": "costate_task",
   "params": {
     "action": "create",
     "task": "Assemble final.pdf — legal has signed off, numbers are locked. Approve for send.",

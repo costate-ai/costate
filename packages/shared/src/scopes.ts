@@ -144,7 +144,7 @@ export function hasAllScopes(granted: Scope[], required: Scope[]): boolean {
 // ─── MCP tool scope requirements ─────────────────────────────
 // Each MCP tool declares the minimum scope it needs. The wrap helper in
 // mcp-server.ts checks this before calling the handler. Some tools (like
-// costate_handoff and costate_sql) gate further per-action / per-statement
+// costate_task and costate_sql) gate further per-action / per-statement
 // inside the handler; the entry here is the FLOOR.
 
 export const TOOL_SCOPES: Record<string, Scope> = {
@@ -169,7 +169,7 @@ export const TOOL_SCOPES: Record<string, Scope> = {
   costate_snapshots: "snapshots:read",
   // Tasks — minimum is read (for list/get); handler enforces tasks:write for
   // create/claim/complete/fail/cancel and tasks:admin for approve/reject.
-  costate_handoff: "tasks:read",
+  costate_task: "tasks:read",
   // Discovery
   costate_list_workspaces: "metadata:read",
   // costate_workspace + costate_access bypass per-tool gate (heterogeneous

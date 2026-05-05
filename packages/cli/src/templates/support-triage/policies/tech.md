@@ -57,4 +57,4 @@ engineering replies.
 
 1. `tickets.status = 'answered'` if self-served, `'escalated'` otherwise.
 2. `resolved_at = now()`.
-3. `costate_handoff complete` with `result_ref` pointing at your response.
+3. `costate_task complete` with `result_ref` pointing at your response.
