@@ -244,6 +244,33 @@ export type AccessInput = z.infer<typeof AccessInput>;
 
 // ─── Task handoff (A2A-compatible) ─────────────────────────
 
+/**
+ * Anchor: a costate:// URI plus a line/col range tying a task to a specific
+ * selection in a file (Word-style anchored comment). Optional on every task.
+ * `excerpt` is a snapshot for rendering; line/col are the source of truth.
+ */
+const TaskAnchorSchema = z.object({
+  uri: z
+    .string()
+    .regex(/^costate:\/\//)
+    .describe("costate:// URI of the anchored file"),
+  range: z.object({
+    start: z.object({
+      line: z.number().int().min(1),
+      col: z.number().int().min(0),
+    }),
+    end: z.object({
+      line: z.number().int().min(1),
+      col: z.number().int().min(0),
+    }),
+  }),
+  excerpt: z
+    .string()
+    .max(512)
+    .optional()
+    .describe("Snapshot of selected text (rendering only, ≤512 chars)"),
+});
+
 export const HandoffInput = z.object({
   workspace: z.string().describe("Workspace ID"),
   action: z
@@ -255,6 +282,9 @@ export const HandoffInput = z.object({
       "cancel",
       "approve",
       "reject",
+      "request_input",
+      "provide_input",
+      "comment",
       "get",
       "list",
     ])
@@ -295,18 +325,52 @@ export const HandoffInput = z.object({
   task_id: z
     .string()
     .optional()
-    .describe("Task ID (required for claim/complete/fail/cancel/get)"),
+    .describe(
+      "Task ID (required for claim/complete/fail/cancel/approve/reject/request_input/provide_input/comment/get)",
+    ),
   result_ref: z
     .string()
     .regex(/^costate:\/\//)
     .optional()
     .describe("costate:// URI for completion output"),
   reason: z.string().optional().describe("Reason for fail/cancel/reject"),
+  prompt: z
+    .string()
+    .max(8192)
+    .optional()
+    .describe(
+      "Question text from the assignee (required for request_input). Appended to the task's message thread as kind=prompt and pauses the task at input-required.",
+    ),
+  input: z
+    .string()
+    .max(8192)
+    .optional()
+    .describe(
+      "Answer text from the originator/principal (required for provide_input). Appended as kind=input and resumes the task to working.",
+    ),
+  comment: z
+    .string()
+    .max(8192)
+    .optional()
+    .describe(
+      "Free-form comment (required for action=comment). Appended as kind=comment without changing task status.",
+    ),
+  anchor: TaskAnchorSchema.optional().describe(
+    "Optional file selection this task is anchored to (Word-style anchored comment).",
+  ),
+  kickoff_message: z
+    .string()
+    .max(8192)
+    .optional()
+    .describe(
+      "Optional first message appended to the task's thread on create (kind=kickoff). Use this when starting a task from a Word-style 'Add comment' on a file selection.",
+    ),
   status: z
     .enum([
       "submitted",
       "requires_approval",
       "working",
+      "input-required",
       "completed",
       "failed",
       "cancelled",
@@ -318,6 +382,7 @@ export const HandoffInput = z.object({
   limit: z.number().optional().describe("Page size (1-200, default 50)"),
 });
 export type HandoffInput = z.infer<typeof HandoffInput>;
+export type TaskAnchor = z.infer<typeof TaskAnchorSchema>;
 
 // ─── Generic output type ───────────────────────────────────
 //
