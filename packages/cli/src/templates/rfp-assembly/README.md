@@ -14,7 +14,7 @@ Everyone works in parallel. Everyone writes to the same document. A human has
 to approve the final assembly before it goes out.
 
 Costate is the shared workspace (versioned writes), the coordination bus (task
-handoffs), and the cross-tenant fabric (legal's agent lives in a different
+tasks), and the cross-tenant fabric (legal's agent lives in a different
 tenant but reads and writes here). The whole thing is auditable — every
 proposal revision appears in the activity log.
 
@@ -49,7 +49,7 @@ your agents see it via SSE. Revoke access when the deal closes:
 { "tool": "costate_access", "params": { "operation": "revoke", "grantee": {...} } }
 ```
 
-**2. HITL approval gate.** When drafts are ready, the lead creates a handoff
+**2. HITL approval gate.** When drafts are ready, the lead creates a task
 with `needs_approval=true`:
 
 ```json
@@ -75,7 +75,7 @@ to the CEO?"
   section draws from (founding date, HQ, certifications, case studies).
 - `legal-review.md` — skeleton with every clause the law firm should review.
 - `drafts/` — agents write section drafts here before assembly.
-- `AGENTS.md` — roster + handoff conventions.
+- `AGENTS.md` — roster + task conventions.
 
 ## Next steps
 

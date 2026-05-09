@@ -44,7 +44,7 @@ When citing a bug, always include the bug ID and ETA if known.
 
 ## Tier 3 — Escalate
 
-Create a handoff task to `@cs/eng` with `needs_approval=false`. Full customer
+Create a task to `@cs/eng` with `needs_approval=false`. Full customer
 quote + repro steps in the `task` field. Don't respond to the customer until
 engineering replies.
 

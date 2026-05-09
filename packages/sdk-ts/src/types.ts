@@ -12,7 +12,7 @@ export interface CostateClientConfig {
   /**
    * Default workspace ID. Auto-injected as `workspace` into scoped tool calls
    * (read/write/sql/etc.). Not injected into management tools
-   * (workspace/access/handoff) whose `workspace_id` is an operation target.
+   * (workspace/access/task) whose `workspace_id` is an operation target.
    */
   workspaceId?: string;
 }

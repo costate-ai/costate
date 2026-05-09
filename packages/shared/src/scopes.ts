@@ -6,7 +6,7 @@
  * grant scope strings map to internal Scope values.
  *
  * Design rule (post-refactor): one resource, one scope family. No silent
- * cross-grants — `task_handoff: write` does NOT imply `files:write`. If a
+ * cross-grants — `tasks: write` does NOT imply `files:write`. If a
  * grant needs file access, the admin grants `files: write` explicitly. This
  * makes the permission matrix in the UI mean exactly what it says.
  */
@@ -21,7 +21,7 @@ export type Scope =
   | "sql:read"
   | "sql:write"
   | "sql:ddl"
-  // Tasks (handoff lifecycle)
+  // Tasks (lifecycle: submitted → working → completed/failed/cancelled)
   | "tasks:read"
   | "tasks:write"
   | "tasks:admin"

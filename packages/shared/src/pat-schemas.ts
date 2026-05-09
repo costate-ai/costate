@@ -53,7 +53,7 @@ export const WorkspacePermissionsInput = z.object({
   sql_schema: z.enum(["none", "admin"]),
   activity_log: z.enum(["none", "read", "write"]),
   snapshots: z.enum(["none", "read", "write"]),
-  task_handoff: z.enum(["none", "read", "write", "admin"]),
+  tasks: z.enum(["none", "read", "write", "admin"]),
   access_grants: z.enum(["none", "read", "write"]),
   workspace_metadata: z.enum(["none", "read", "write", "admin"]),
 });

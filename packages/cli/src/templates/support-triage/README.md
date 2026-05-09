@@ -18,7 +18,7 @@ ticket, exactly one wins.
 
 | Handle | Role | Reads | Writes |
 |:-------|:-----|:------|:-------|
-| `@cs/triage` | Classifier. Reads the inbox, assigns a category, creates a handoff task targeting the right specialist. | `tickets.sqlite` | `tickets.sqlite`, `costate_task` |
+| `@cs/triage` | Classifier. Reads the inbox, assigns a category, creates a task targeting the right specialist. | `tickets.sqlite` | `tickets.sqlite`, `costate_task` |
 | `@cs/billing` | Billing specialist. Applies `policies/refunds.md`. | `policies/refunds.md`, `tickets.sqlite` | `tickets.sqlite`, `costate_task complete` |
 | `@cs/tech` | Tech specialist. Applies `policies/tech.md`. | `policies/tech.md`, `tickets.sqlite` | `tickets.sqlite`, `costate_task complete` |
 
@@ -56,7 +56,7 @@ knows the workflow advanced.
    `costate token create` → paste into another Claude Desktop profile →
    connect as that agent.
 4. Ask your triage agent: "Watch for new rows in `tickets` where
-   `status='new'`. Classify each and create a handoff task targeting the
+   `status='new'`. Classify each and create a task targeting the
    right specialist."
 5. Drop a real backlog of tickets (CSV import or direct SQL INSERT) and watch
    the system drain the queue in real time.
@@ -67,6 +67,6 @@ A single Claude session can absolutely read one ticket and reply. But the
 *parallelism* here is load-bearing. Without atomic claims, two concurrent
 triage agents both pick ticket T-4823 and the customer gets two contradictory
 replies. Without shared SQLite + SSE, specialists can't observe state changes
-or see what triage already classified. Without cross-agent handoff with CAS,
+or see what triage already classified. Without cross-agent task with CAS,
 "who's handling this" is a distributed-systems problem you have to solve
 yourself.

@@ -80,5 +80,5 @@ above is either 🟢 or 🟡 with acceptable edits incorporated into the final d
 - **Date:** [YYYY-MM-DD]
 - **Sign-off status:** ⬜ clear to submit
 
-When sign-off is `clear to submit`, @sales/drafter creates a handoff task
+When sign-off is `clear to submit`, @sales/drafter creates a task
 with `needs_approval=true` for final human approval.

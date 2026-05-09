@@ -27,7 +27,7 @@ Approve up to 50% of the order value. Explain the partial amount.
 
 ## Escalate to human (requires_approval)
 
-Create a handoff with `needs_approval=true` targeting the human operator:
+Create a task with `needs_approval=true` targeting the human operator:
 
 - Refund request > $500
 - Customer claims fraud but card is not flagged
@@ -45,6 +45,6 @@ Respond firmly but politely.
 ## After every response
 
 1. Update `tickets.status = 'answered'`, set `resolved_at = now()`.
-2. Mark the handoff task `complete`.
+2. Mark the task `complete`.
 3. If you escalated, set `status = 'escalated'` and leave the task in
    `requires_approval` for the Control Tower.

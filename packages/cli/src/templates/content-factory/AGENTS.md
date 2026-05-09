@@ -20,7 +20,7 @@ interviews) into long-form blog drafts.
    CTA).
 5. `UPDATE pieces SET draft_uri='costate://<ws>/drafts/<slug>.md',
    stage='in-seo'` atomically via `costate_sql`.
-6. Create a handoff task:
+6. Create a task:
    ```json
    { "tool": "costate_task",
      "params": {
@@ -58,7 +58,7 @@ Nothing ships past them without approval.
 5. If no (first or second revision):
    - Write specific fix requests into `seo_notes` column for this piece.
    - `costate_task fail` with `reason = "needs revisions — see pieces.seo_notes"`.
-   - A new handoff goes back to @marketing/writer.
+   - A new task goes back to @marketing/writer.
 6. If a THIRD round of rejections on the same piece:
    - Escalate: `costate_task create` with `needs_approval=true`,
      `task = "Human review required — 3 rounds of SEO pushback on <slug>."`
@@ -99,12 +99,12 @@ SELECT stage, COUNT(*) FROM pieces GROUP BY stage;
 ```
 raw-transcript.txt ──▶ @marketing/writer ──▶ drafts/<slug>.md
                                                  │
-                                                 │ handoff: SEO review
+                                                 │ task: SEO review
                                                  ▼
                               @marketing/seo (1-2 rounds)
                                                  │
-                                 ─ approve ─▶ handoff: distribute ─▶ @social/distro
-                                 ─ reject  ─▶ handoff: revise ────▶ @marketing/writer
+                                 ─ approve ─▶ task: distribute ─▶ @social/distro
+                                 ─ reject  ─▶ task: revise ────▶ @marketing/writer
                                  ─ 3x fail ─▶ needs_approval ─────▶ human
                                                                         │
                                                                         ▼

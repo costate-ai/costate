@@ -2,7 +2,7 @@
 
 ## @sales/lead (you, probably)
 
-**Role:** project manager. Reads the inbound RFP, creates handoff tasks for
+**Role:** project manager. Reads the inbound RFP, creates tasks for
 each section. You operate through a `costate_task create` loop —
 one task per section, routed to the right drafter.
 
@@ -11,7 +11,7 @@ one task per section, routed to the right drafter.
 > Read `rfp-inbound.md` from the workspace. (Your human lead ran
 > `costate upload rfp-inbound.pdf` to convert it from PDF to Markdown
 > during setup.) Break it into 8–12 sections. For each:
-> - Create a handoff task. `to_agent` = `@sales/drafter` for narrative sections,
+> - Create a task. `to_agent` = `@sales/drafter` for narrative sections,
 >   `@finance/pricer` for pricing/T&Cs, `@external/legal` for clauses.
 > - `payload_ref` = `costate://<ws>/rfp-inbound.md#section-N`.
 > - `idempotency_key` = `rfp-section-N` (retry-safe).

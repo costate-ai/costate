@@ -42,10 +42,10 @@ export interface WorkspacePermissions {
   /** File snapshots. admin N/A. */
   snapshots: "none" | "read" | "write";
 
-  /** Task handoff: read = see tasks, write = create/claim/complete, admin = approve/reject HITL-gated tasks. */
-  task_handoff: "none" | "read" | "write" | "admin";
+  /** Tasks: read = see tasks, write = create/claim/complete, admin = approve/reject HITL-gated tasks. */
+  tasks: "none" | "read" | "write" | "admin";
 
-  /** Access grants: read = list workspace members (needed for handoff routing), write = invite/revoke others. */
+  /** Access grants: read = list workspace members (needed for task routing), write = invite/revoke others. */
   access_grants: "none" | "read" | "write";
 
   /** Workspace metadata: read = see name/settings, write = rename, admin = delete. */
@@ -77,7 +77,7 @@ export const WORKSPACE_PRESETS = {
     sql_schema: "none",
     activity_log: "read",
     snapshots: "read",
-    task_handoff: "read",
+    tasks: "read",
     access_grants: "read",
     workspace_metadata: "read",
   } as WorkspacePermissions,
@@ -89,7 +89,7 @@ export const WORKSPACE_PRESETS = {
     sql_schema: "none",
     activity_log: "write",
     snapshots: "write",
-    task_handoff: "write",
+    tasks: "write",
     access_grants: "read",
     workspace_metadata: "write",
   } as WorkspacePermissions,
@@ -101,7 +101,7 @@ export const WORKSPACE_PRESETS = {
     sql_schema: "admin",
     activity_log: "write",
     snapshots: "write",
-    task_handoff: "admin",
+    tasks: "admin",
     access_grants: "write",
     workspace_metadata: "admin",
   } as WorkspacePermissions,
@@ -116,7 +116,7 @@ export const WORKSPACE_NO_ACCESS: WorkspacePermissions = {
   sql_schema: "none",
   activity_log: "none",
   snapshots: "none",
-  task_handoff: "none",
+  tasks: "none",
   access_grants: "none",
   workspace_metadata: "none",
 };
@@ -135,8 +135,8 @@ export const ACCOUNT_FREE_TIER: AccountPermissions = {
  *
  * Strict 1:1 mapping — each permission key produces ONLY scopes for its own
  * resource family. No silent cross-grants. If a grant needs to read files,
- * the admin grants `files: read` explicitly. Previously `task_handoff: write`
- * silently added `files:write`, which let handoff recipients overwrite
+ * the admin grants `files: read` explicitly. Previously `tasks: write`
+ * silently added `files:write`, which let task recipients overwrite
  * arbitrary files in workspaces shared with `files: read`. That escalation
  * is removed. (Exception: `sql_schema: admin` still implies sql:read+write
  * because DDL only makes sense with data access; dropped tables can't be
@@ -170,16 +170,16 @@ export function permissionsToScopes(p: WorkspacePermissions): Scope[] {
     scopes.push("snapshots:read");
   if (p.snapshots === "write") scopes.push("snapshots:write");
 
-  // Tasks (handoff)
+  // Tasks
   if (
-    p.task_handoff === "read" ||
-    p.task_handoff === "write" ||
-    p.task_handoff === "admin"
+    p.tasks === "read" ||
+    p.tasks === "write" ||
+    p.tasks === "admin"
   )
     scopes.push("tasks:read");
-  if (p.task_handoff === "write" || p.task_handoff === "admin")
+  if (p.tasks === "write" || p.tasks === "admin")
     scopes.push("tasks:write");
-  if (p.task_handoff === "admin") scopes.push("tasks:admin");
+  if (p.tasks === "admin") scopes.push("tasks:admin");
 
   // Workspace metadata
   if (

@@ -17,7 +17,7 @@ import type {
   ListWorkspacesInput,
   WorkspaceInput,
   AccessInput,
-  HandoffInput,
+  TaskInput,
   ToolOutput,
 } from "@costate-ai/mcp";
 import type { CostateClientConfig } from "./types.js";
@@ -178,13 +178,13 @@ export class CostateClient {
     return this.callToolNoInject("costate_access", args);
   }
 
-  // ─── Task handoff (A2A-compatible) ─────────────────────
+  // ─── Tasks (A2A-compatible) ────────────────────────────
 
   /**
    * Coordinate tasks between agents. Actions: create (default), claim,
    * complete, fail, cancel, approve, reject, get, list.
    */
-  async handoff(args: HandoffInput): Promise<ToolOutput> {
+  async task(args: TaskInput): Promise<ToolOutput> {
     return this.callToolNoInject("costate_task", args);
   }
 

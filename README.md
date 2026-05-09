@@ -43,7 +43,7 @@ Get a PAT at https://costate.ai after signing up.
 
 ## Protocol Spec
 
-See [`docs/SPEC.md`](docs/SPEC.md) for the Costate coordination protocol — blackboard CAS, handoff state machine, SSE event shapes, PAT scopes, A2A extensions. **v0.1 is Descriptive, not Normative** — breaking changes expected until v1.0.
+See [`docs/SPEC.md`](docs/SPEC.md) for the Costate coordination protocol — blackboard CAS, task state machine, SSE event shapes, PAT scopes, A2A extensions. **v0.1 is Descriptive, not Normative** — breaking changes expected until v1.0.
 
 ## Templates
 
@@ -51,7 +51,7 @@ Scaffold a pre-built agent workspace in one command:
 
 ```bash
 costate init --template claude-code-reviewer   # 2 agents, PR review
-costate init --template research-team          # 3 agents, handoff chain
+costate init --template research-team          # 3 agents, task chain
 costate init --template data-pipeline          # watcher + writer + validator
 ```
 

@@ -26,7 +26,7 @@ ships until the SEO agent explicitly approves.
 ## The coordination moment
 
 **State machine: distro is blocked until SEO completes.** When the writer
-finishes a draft, they create a handoff task targeting `@marketing/seo`:
+finishes a draft, they create a task targeting `@marketing/seo`:
 
 ```json
 { "tool": "costate_task",
@@ -52,7 +52,7 @@ claims a draft that hasn't been through SEO. When SEO finishes:
 }
 ```
 
-…the completion triggers a NEW handoff task for distro. The pipeline pull is
+…the completion triggers a NEW task for distro. The pipeline pull is
 durable: if distro is offline for an hour, the task sits in `submitted` state
 waiting. When distro comes back, it claims, processes, and completes. Nothing
 gets skipped, nothing gets processed twice.
@@ -78,7 +78,7 @@ gets skipped, nothing gets processed twice.
    Connect each to a separate Claude Desktop / Cursor profile.
 3. Kick off the writer: "Convert `raw-transcript.txt` into a long-form blog
    post draft at `drafts/q1-launch-recap.md`. Respect `brand-voice.md`.
-   When done, create a handoff task to `@marketing/seo`."
+   When done, create a task to `@marketing/seo`."
 4. Your SEO agent watches the task queue. Approves or requests revisions.
 5. Your distro agent watches for SEO-completed tasks, then produces the 4–5
    channel assets per piece into `output/<slug>/`.
@@ -92,7 +92,7 @@ finished? Options:
 - Custom workflow engine (Temporal, Airflow) — weeks of setup, ops burden
 
 Costate gives you this for free:
-- **Durable handoffs** — SEO's `complete` triggers distro's `submitted` task
+- **Durable tasks** — SEO's `complete` triggers distro's `submitted` task
   by convention. If any agent is offline, the task waits. No dropped work.
 - **State machine enforcement** — distro can't claim a draft that hasn't
   completed SEO review. The protocol prevents the mistake.

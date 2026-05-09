@@ -15,7 +15,7 @@ first to learn its role.
 **For each new ticket:**
 1. Read the body. Infer a category from `{billing, tech, product}`.
 2. Update `tickets.category` and `tickets.status = 'triaged'`.
-3. Create a handoff task targeting `@cs/billing` or `@cs/tech`:
+3. Create a task targeting `@cs/billing` or `@cs/tech`:
    ```json
    { "tool": "costate_task",
      "params": {
@@ -29,7 +29,7 @@ first to learn its role.
 4. Idempotency: pass `idempotency_key = "ticket-{id}"` so retries don't create duplicates.
 
 **Escalation:** if unable to classify (ambiguous, multi-category, or angry
-customer), set `status='triaged'`, `category=NULL`, and create a handoff to
+customer), set `status='triaged'`, `category=NULL`, and create a task to
 a human with `needs_approval=true`.
 
 ## @cs/billing

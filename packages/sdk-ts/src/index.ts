@@ -26,7 +26,7 @@ export type {
   ListWorkspacesInput,
   WorkspaceInput,
   AccessInput,
-  HandoffInput,
+  TaskInput,
   ToolOutput,
   ToolDefinition,
 } from "@costate-ai/mcp";

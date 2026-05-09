@@ -45,8 +45,6 @@ window:
 |----------------------------------------|------------------------------------|
 | Personal Access Token (PAT)            | Agent Access Token (AAT) (§1.8)    |
 | Token prefix `cst_pat_`                | Token prefix `cst_aat_` (§1.8)     |
-| MCP tool `costate_handoff`             | MCP tool `costate_task` (Appx A)   |
-| "Handoff" (state machine, payload ref) | "Task" (§1.4, §3.3)                |
 | URI form `costate://<ws_id>/...`       | URI form `costate://<host>/<ws_id>/...` (§2.1) |
 
 The Cloud reference implementation accepts both forms during the
@@ -132,7 +130,7 @@ Output shapes are `unknown` in v0.1 — consumers cast at the call site.
 | `costate_snapshots` | List snapshots for a file. |
 | `costate_workspace` | Workspace lifecycle: `create` / `delete` / `update` / `list`. |
 | `costate_access` | Cross-tenant access: `grant` / `revoke` / `revoke_self`. |
-| `costate_handoff` | Task lifecycle between agents. |
+| `costate_task` | Task lifecycle between agents. |
 
 ---
 
@@ -161,7 +159,7 @@ hash. Treat it as an opaque token; do not compare across workspaces.
 
 ---
 
-## 6. Handoff — Task State Machine
+## 6. Task State Machine
 
 ```
    ┌───────────┐       ┌───────────────────┐       ┌─────────┐      ┌───────────┐
@@ -177,7 +175,7 @@ hash. Treat it as an opaque token; do not compare across workspaces.
 **Terminal states:** `completed`, `failed`, `cancelled`, `rejected`. Once in
 terminal state, no further transitions.
 
-**Actions** (invoked via `costate_handoff` with an `action` parameter):
+**Actions** (invoked via `costate_task` with an `action` parameter):
 
 | Action | Precondition | Postcondition | Who |
 |:-------|:-------------|:--------------|:----|
@@ -243,7 +241,7 @@ subscribers across reconnect — use `costate_watch` to catch up after a gap.
 | Event | Fires on |
 |:------|:---------|
 | `activity_event` | any workspace mutation (mirrors `costate_log` entries) |
-| `task_created` | `costate_handoff` create |
+| `task_created` | `costate_task` create |
 | `task_status_changed` | task transition (approve/reject/claim/complete/fail/cancel) |
 | `workspace_created_by_agent` | agent-authored workspace create |
 | `workspace_deleted_by_agent` | agent-authored workspace delete |
@@ -318,7 +316,7 @@ as generic `ConnectionError` by the SDK.
 | `FILE_VALIDATION_ERROR` / `RESOURCE_VALIDATION_ERROR` | 400 | Input failed schema validation |
 | `CONCURRENCY_STALE_FENCE` | 409 | Pre-condition fence is stale |
 | `CONCURRENCY_VERSION_CONFLICT` | 409 | OCC `expectedVersion` mismatch |
-| `TASK_CONFLICT` | 409 | Losing-race claim on a handoff task |
+| `TASK_CONFLICT` | 409 | Losing-race claim on a task |
 | `AUTH_INVALID_API_KEY` | 401 | Bearer token unrecognized |
 | `AUTH_PERMISSION_DENIED` | 403 | Caller lacks required scope |
 | `AUTH_TOKEN_EXPIRED` | 401 | JWT past expiry |
@@ -366,10 +364,10 @@ other purposes in client-side extensions:
 
 ```
 costate://<workspace_id>/<path>         # file reference
-costate://<workspace_id>/.tasks/<task_id>  # task reference (implicit on handoff)
+costate://<workspace_id>/.tasks/<task_id>  # task reference (implicit on task)
 ```
 
-Used by `costate_handoff` `payload_ref` and `result_ref`. The scheme is
+Used by `costate_task` `payload_ref` and `result_ref`. The scheme is
 descriptive in v0.1; normative grammar lands in v1.0.
 
 ---

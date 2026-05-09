@@ -204,7 +204,7 @@ export const GrantPermissionsInput = z.object({
   sql_schema: z.enum(["none", "admin"]),
   activity_log: z.enum(["none", "read", "write"]),
   snapshots: z.enum(["none", "read", "write"]),
-  task_handoff: z.enum(["none", "read", "write", "admin"]),
+  tasks: z.enum(["none", "read", "write", "admin"]),
   access_grants: z.enum(["none", "read", "write"]),
   workspace_metadata: z.enum(["none", "read", "write", "admin"]),
 });
@@ -226,12 +226,12 @@ export const AccessInput = z.object({
     .enum(["read", "write", "admin"])
     .optional()
     .describe(
-      "Permission preset for grant. Defaults to 'read' if omitted. Common case — use this. 'write' gives full collaboration (read+write files, run SQL, participate in handoffs). 'admin' gives everything including workspace rename/delete and cross-tenant re-sharing. The preset expands to the full 8-field WorkspacePermissions matrix (see WORKSPACE_PRESETS in @costate-ai/shared); pair with `overrides` to tighten or loosen specific fields.",
+      "Permission preset for grant. Defaults to 'read' if omitted. Common case — use this. 'write' gives full collaboration (read+write files, run SQL, participate in tasks). 'admin' gives everything including workspace rename/delete and cross-tenant re-sharing. The preset expands to the full 8-field WorkspacePermissions matrix (see WORKSPACE_PRESETS in @costate-ai/shared); pair with `overrides` to tighten or loosen specific fields.",
     ),
   overrides: GrantPermissionsInput.partial()
     .optional()
     .describe(
-      "Sparse per-field overrides that layer on top of `preset`. Example: `preset: 'read', overrides: { task_handoff: 'write' }` gives a reader who can also work on handoffs. Only specify fields you want to change relative to the preset — don't restate the whole matrix. Use this rarely; presets cover 95% of sharing patterns.",
+      "Sparse per-field overrides that layer on top of `preset`. Example: `preset: 'read', overrides: { tasks: 'write' }` gives a reader who can also work on tasks. Only specify fields you want to change relative to the preset — don't restate the whole matrix. Use this rarely; presets cover 95% of sharing patterns.",
     ),
   grantee: z
     .object({
@@ -242,7 +242,7 @@ export const AccessInput = z.object({
 });
 export type AccessInput = z.infer<typeof AccessInput>;
 
-// ─── Task handoff (A2A-compatible) ─────────────────────────
+// ─── Tasks (A2A-compatible) ────────────────────────────────
 
 /**
  * Anchor: a costate:// URI plus a line/col range tying a task to a specific
@@ -271,7 +271,7 @@ const TaskAnchorSchema = z.object({
     .describe("Snapshot of selected text (rendering only, ≤512 chars)"),
 });
 
-export const HandoffInput = z.object({
+export const TaskInput = z.object({
   workspace: z.string().describe("Workspace ID"),
   action: z
     .enum([
@@ -299,7 +299,7 @@ export const HandoffInput = z.object({
     .object({ email: z.string().email() })
     .optional()
     .describe(
-      "REQUIRED for action=create. Recipient human, by email (same as costate_access.invitee.email). The server runs the recipient's routing rules to pick one of their agents; unmatched handoffs become pending-assignment for the recipient to pick in Control Tower. (Marked optional only because non-create actions don't use it; create returns 400 without it.)",
+      "REQUIRED for action=create. Recipient human, by email (same as costate_access.invitee.email). The server runs the recipient's routing rules to pick one of their agents; unmatched tasks become pending-assignment for the recipient to pick in Control Tower. (Marked optional only because non-create actions don't use it; create returns 400 without it.)",
     ),
   payload_ref: z
     .string()
@@ -381,7 +381,7 @@ export const HandoffInput = z.object({
   cursor: z.string().optional().describe("Pagination cursor"),
   limit: z.number().optional().describe("Page size (1-200, default 50)"),
 });
-export type HandoffInput = z.infer<typeof HandoffInput>;
+export type TaskInput = z.infer<typeof TaskInput>;
 export type TaskAnchor = z.infer<typeof TaskAnchorSchema>;
 
 // ─── Generic output type ───────────────────────────────────
@@ -513,7 +513,7 @@ export const toolDefinitions: ToolDefinition[] = [
     name: "costate_task",
     title: "Coordinate tasks between agents",
     description:
-      "Create, claim, complete, or manage task handoffs between agents.",
-    inputSchema: HandoffInput,
+      "Create, claim, complete, or manage tasks between agents.",
+    inputSchema: TaskInput,
   },
 ];

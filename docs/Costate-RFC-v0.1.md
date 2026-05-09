@@ -120,7 +120,6 @@ may race to claim them atomically, and they reference workspace files for
 input and output. Costate tasks are A2A's task model translated into a
 shared-substrate setting.
 
-Informally, a Costate task is often called a "handoff" in product-level prose.
 The protocol primitive is **task**; the operations in §3.3 use that name
 exclusively.
 
