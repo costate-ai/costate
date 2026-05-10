@@ -40,6 +40,10 @@ export function getExtensions(opts: ExtensionsOptions = {}): Extensions {
       // CodeBlockLowlight replaces the default code block. Everything else
       // ships from StarterKit.
       codeBlock: false,
+      // StarterKit v3 ships Link by default — we register a configured
+      // Link separately (autolink, protocol allowlist) so disable the
+      // bundled one to avoid duplicate-extension-name warnings.
+      link: false,
       // Y.js (UndoManager) handles history on the frontend; disable
       // Tiptap's undoRedo so the two don't fight. Server keeps the
       // default since it never actually applies user input.
