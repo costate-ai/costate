@@ -56,6 +56,35 @@ export async function markdownToYDoc(md: string): Promise<Y.Doc> {
 }
 
 /**
+ * Build a Y.Doc from a ProseMirror JSON document. Canonical-flip (eng
+ * review): this is the path FileWriteService takes when an agent writes
+ * `content_json` directly. Symmetric with `markdownToYDoc` but skips the
+ * markdown lexer.
+ */
+export function tiptapJsonToYDoc(json: unknown): Y.Doc {
+  return TiptapTransformer.toYdoc(json, Y_FIELD, extensionsForTransformer);
+}
+
+/**
+ * Encode a Y.Doc as a single update buffer. Convenience over
+ * `Y.encodeStateAsUpdate(doc)` so callers don't import yjs directly.
+ */
+export function encodeYDocAsUpdate(doc: Y.Doc): Buffer {
+  return Buffer.from(Y.encodeStateAsUpdate(doc));
+}
+
+/**
+ * Build the Y.js wire bytes for a content_json payload. Replaces the
+ * markdown-coupled `buildYjsArtefacts` that lived in the worker before
+ * the canonical flip (eng review 2A — markdown parse moves to MCP layer,
+ * repository takes JSON only).
+ */
+export function buildYjsFromJson(json: unknown): { yjsBuffer: Buffer } {
+  const doc = tiptapJsonToYDoc(json);
+  return { yjsBuffer: encodeYDocAsUpdate(doc) };
+}
+
+/**
  * Materialise a Y.Doc back to markdown. Used by Hocuspocus Database.store
  * to populate the content_text derived view + by the activity-coalesce
  * extension for the audit hash.

@@ -61,12 +61,129 @@ export const ReadInput = z.object({
 });
 export type ReadInput = z.infer<typeof ReadInput>;
 
-export const WriteInput = z.object({
-  workspace: wsParam,
-  uri: uriField,
-  content: z.string(),
-  expectedVersion: z.string().optional(),
-});
+/**
+ * Set of ProseMirror node types accepted on `content_json` writes.
+ * Anything outside this set is rejected at the MCP boundary as
+ * `InvalidContentJson` (eng review 1G + 1H). Keep in sync with
+ * `getExtensions` in @costate-ai/tiptap-config.
+ */
+export const ALLOWED_CONTENT_JSON_NODE_TYPES = new Set([
+  "doc",
+  "paragraph",
+  "heading",
+  "blockquote",
+  "codeBlock",
+  "bulletList",
+  "orderedList",
+  "listItem",
+  "taskList",
+  "taskItem",
+  "horizontalRule",
+  "hardBreak",
+  "text",
+  "table",
+  "tableRow",
+  "tableHeader",
+  "tableCell",
+  "image",
+  "mathBlock",
+  "mathInline",
+  "mermaid",
+]);
+
+const ALLOWED_CONTENT_JSON_MARKS = new Set([
+  "bold",
+  "italic",
+  "strike",
+  "code",
+  "link",
+  "underline",
+]);
+
+const MAX_CONTENT_JSON_BYTES = 4_000_000;
+
+/**
+ * Walks a ProseMirror JSON tree and validates every node.type and mark.type
+ * against the whitelist. Returns null on success, an error message string
+ * otherwise. Permissive on missing `content` arrays so empty docs pass.
+ */
+export function validateContentJson(json: unknown): string | null {
+  if (json === null || typeof json !== "object") {
+    return "content_json must be an object";
+  }
+  const stack: unknown[] = [json];
+  while (stack.length) {
+    const node = stack.pop();
+    if (!node || typeof node !== "object") continue;
+    const n = node as { type?: unknown; content?: unknown; marks?: unknown };
+    if (typeof n.type !== "string") {
+      return "every node must have a string `type`";
+    }
+    if (!ALLOWED_CONTENT_JSON_NODE_TYPES.has(n.type)) {
+      return `unknown node type: ${n.type}`;
+    }
+    if (Array.isArray(n.marks)) {
+      for (const m of n.marks as Array<{ type?: unknown }>) {
+        if (typeof m?.type !== "string") {
+          return "every mark must have a string `type`";
+        }
+        if (!ALLOWED_CONTENT_JSON_MARKS.has(m.type)) {
+          return `unknown mark type: ${m.type}`;
+        }
+      }
+    }
+    if (Array.isArray(n.content)) {
+      for (const child of n.content) stack.push(child);
+    }
+  }
+  return null;
+}
+
+/**
+ * costate_write payload. Dual-shape (eng review 1G):
+ *   - `content` (markdown string): server parses to JSON.
+ *   - `content_json` (ProseMirror tree): server validates with the
+ *     whitelist above and stores directly.
+ * Exactly one is required.
+ */
+export const WriteInput = z
+  .object({
+    workspace: wsParam,
+    uri: uriField,
+    content: z.string().optional(),
+    content_json: z.unknown().optional(),
+    expectedVersion: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasMd = typeof data.content === "string";
+    const hasJson = data.content_json !== undefined;
+    if (hasMd === hasJson) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "exactly one of `content` or `content_json` is required",
+      });
+      return;
+    }
+    if (hasJson) {
+      const stringified = JSON.stringify(data.content_json);
+      if (stringified.length > MAX_CONTENT_JSON_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `content_json exceeds ${MAX_CONTENT_JSON_BYTES} bytes`,
+          path: ["content_json"],
+        });
+        return;
+      }
+      const err = validateContentJson(data.content_json);
+      if (err) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `invalid content_json: ${err}`,
+          path: ["content_json"],
+        });
+      }
+    }
+  });
 export type WriteInput = z.infer<typeof WriteInput>;
 
 export const EditInput = z.object({
@@ -146,6 +263,23 @@ export const StatusInput = z.object({
   workspace: wsParam,
 });
 export type StatusInput = z.infer<typeof StatusInput>;
+
+// ─── Export ────────────────────────────────────────────────
+
+/**
+ * costate_export — render a stored file in a target format. Today only
+ * `format='markdown'` is implemented (rendered from canonical content_json
+ * via tiptapJsonToMarkdown). HTML/PDF/DOCX are reserved for future work.
+ */
+export const ExportInput = z.object({
+  workspace: wsParam,
+  uri: uriField,
+  format: z
+    .enum(["markdown"])
+    .default("markdown")
+    .describe("Output format. Only 'markdown' is supported in v1."),
+});
+export type ExportInput = z.infer<typeof ExportInput>;
 
 // ─── Snapshots ─────────────────────────────────────────────
 
@@ -482,6 +616,15 @@ export const toolDefinitions: ToolDefinition[] = [
     description:
       "Get workspace metadata, file count, agent list, and SQLite table schemas.",
     inputSchema: StatusInput,
+  },
+  {
+    name: "costate_export",
+    title: "Export a file",
+    description:
+      "Render a stored file in the requested format. v1 supports format='markdown', " +
+      "which renders the canonical Tiptap JSON back to markdown via the same walker " +
+      "costate_read uses. Use this to make the format dependency explicit.",
+    inputSchema: ExportInput,
   },
   {
     name: "costate_snapshot",

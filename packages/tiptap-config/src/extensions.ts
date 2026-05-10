@@ -10,6 +10,7 @@ import { TaskItem } from "@tiptap/extension-task-item";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import { common, createLowlight } from "lowlight";
 import type { Extensions } from "@tiptap/core";
+import { MathBlock, MathInline, Mermaid } from "./math-mermaid.js";
 
 const lowlight = createLowlight(common);
 
@@ -59,6 +60,13 @@ export function getExtensions(opts: ExtensionsOptions = {}): Extensions {
     TableCell,
     TaskList,
     TaskItem.configure({ nested: true }),
+    // Cherry-pick 2 from CEO review: math + mermaid native nodes. The
+    // schema is always loaded on the server (so JSON round-trips keep
+    // these nodes); on the frontend, the editor includes them too — UI
+    // rendering (KaTeX / mermaid.js) is a follow-up.
+    MathBlock,
+    MathInline,
+    Mermaid,
     ...(placeholder
       ? [Placeholder.configure({ placeholder })]
       : []),
