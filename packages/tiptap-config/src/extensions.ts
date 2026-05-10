@@ -56,7 +56,10 @@ export function getExtensions(opts: ExtensionsOptions = {}): Extensions {
     Link.configure({
       openOnClick: false,
       autolink: true,
-      protocols: ["http", "https", "mailto"],
+      // Don't pass `protocols` — http/https/mailto are linkify's built-in
+      // schemes. Calling registerCustomProtocol on each editor re-mount
+      // (every file switch) tripped linkify's "already initialized"
+      // warning even though no protocol was actually being added.
     }),
     Table.configure({ resizable: false }),
     TableRow,
